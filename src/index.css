@@ -1,0 +1,97 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap');
+@import 'tailwindcss';
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-border: var(--border);
+  --color-ring: var(--ring);
+  --radius-default: var(--radius);
+  --font-display: var(--font-display-family);
+  --font-body: var(--font-body-family);
+  --font-mono: var(--font-mono-family);
+}
+
+:root {
+  --background: #FFFFFF;
+  --foreground: #0A0A0F;
+  --card: #F7F7F9;
+  --card-foreground: #0A0A0F;
+  --primary: #0A0A0F;
+  --primary-foreground: #FFFFFF;
+  --secondary: #F0F0F4;
+  --secondary-foreground: #0A0A0F;
+  --muted: #F7F7F9;
+  --muted-foreground: #6B6B80;
+  --accent: #3D7EC8;
+  --accent-foreground: #FFFFFF;
+  --accent-warm: #E8461C;
+  --accent-warm-end: #F5861E;
+  --border: #E4E4EC;
+  --ring: #3D7EC8;
+  --footer-bg: #0A0A0F;
+  --footer-fg: #EEEEF5;
+  --radius: 4px;
+  --font-display-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  --font-body-family: 'Manrope', system-ui, sans-serif;
+  --font-mono-family: 'JetBrains Mono', monospace;
+}
+
+.dark {
+  --background: #0C0C12;
+  --foreground: #EEEEF5;
+  --card: #13131A;
+  --card-foreground: #EEEEF5;
+  --primary: #EEEEF5;
+  --primary-foreground: #0C0C12;
+  --secondary: #1C1C26;
+  --secondary-foreground: #EEEEF5;
+  --muted: #18181F;
+  --muted-foreground: #8080A0;
+  --accent: #4D8FD6;
+  --accent-foreground: #FFFFFF;
+  --accent-warm: #F05030;
+  --accent-warm-end: #F5921E;
+  --border: #26263A;
+  --ring: #4D8FD6;
+  --footer-bg: #06060A;
+  --footer-fg: #EEEEF5;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-body-family);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+::-webkit-scrollbar {
+  width: 0px;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+:hover::-webkit-scrollbar {
+  opacity: 1;
+}

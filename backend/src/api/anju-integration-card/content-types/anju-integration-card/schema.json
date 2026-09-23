@@ -1,0 +1,27 @@
+{
+  "kind": "collectionType",
+  "collectionName": "anju_integration_cards",
+  "info": {
+    "singularName": "anju-integration-card",
+    "pluralName": "anju-integration-cards",
+    "displayName": "Anju Integration Card"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "name": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "icon": {
+      "type": "string"
+    },
+    "order": {
+      "type": "integer"
+    }
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "kind": "collectionType",
+  "collectionName": "anju_capabilities",
+  "info": {
+    "singularName": "anju-capability",
+    "pluralName": "anju-capabilities",
+    "displayName": "Anju Capability"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "title": {
+      "type": "string"
+    },
+    "body": {
+      "type": "text"
+    },
+    "icon": {
+      "type": "string"
+    },
+    "Number": {
+      "type": "integer"
+    }
+  }
+}

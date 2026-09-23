@@ -1,0 +1,29 @@
+{
+  "kind": "collectionType",
+  "collectionName": "why_uses",
+  "info": {
+    "singularName": "why-us",
+    "pluralName": "why-uses",
+    "displayName": "Why Us"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "category": {
+      "type": "enumeration",
+      "enum": [
+        "AI",
+        "ERP",
+        "BOTH"
+      ]
+    },
+    "title": {
+      "type": "string"
+    },
+    "body": {
+      "type": "text"
+    }
+  }
+}

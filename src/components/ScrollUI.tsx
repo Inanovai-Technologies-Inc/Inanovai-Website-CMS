@@ -89,10 +89,10 @@ export default function ScrollUI() {
                   width: isActive ? '0.5rem' : '0.3125rem',
                   height: isActive ? '0.5rem' : '0.3125rem',
                   borderRadius: '50%',
-                  backgroundColor: isActive ? 'var(--accent)' : 'var(--border)',
+                  backgroundColor: isActive ? 'var(--accent)' : 'var(--muted-foreground)',
                   border: isActive ? '2px solid var(--accent)' : '1.5px solid var(--muted-foreground)',
                   transition: 'all 0.25s ease',
-                  opacity: isActive ? 1 : 0.5,
+                  opacity: isActive ? 1 : 0.55,
                 }}
               />
               {/* Tooltip label */}

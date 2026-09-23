@@ -1,0 +1,27 @@
+{
+  "kind": "collectionType",
+  "collectionName": "anju_scenarios",
+  "info": {
+    "singularName": "anju-scenario",
+    "pluralName": "anju-scenarios",
+    "displayName": "Anju Scenario"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "title": {
+      "type": "string"
+    },
+    "query": {
+      "type": "text"
+    },
+    "response": {
+      "type": "text"
+    },
+    "order": {
+      "type": "integer"
+    }
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "kind": "collectionType",
+  "collectionName": "careers",
+  "info": {
+    "singularName": "career",
+    "pluralName": "careers",
+    "displayName": "Career"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "title": {
+      "type": "string"
+    },
+    "slug": {
+      "type": "string"
+    },
+    "location": {
+      "type": "string"
+    },
+    "employmentType": {
+      "type": "string"
+    },
+    "experience": {
+      "type": "string"
+    },
+    "description": {
+      "type": "text"
+    },
+    "requirements": {
+      "type": "blocks"
+    },
+    "responsibilities": {
+      "type": "blocks"
+    },
+    "skills": {
+      "type": "string"
+    },
+    "isActive": {
+      "type": "boolean"
+    },
+    "applicationLink": {
+      "type": "string"
+    }
+  }
+}

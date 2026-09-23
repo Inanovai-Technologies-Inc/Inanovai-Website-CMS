@@ -1,0 +1,36 @@
+{
+  "kind": "collectionType",
+  "collectionName": "anju_integrations",
+  "info": {
+    "singularName": "anju-integration",
+    "pluralName": "anju-integrations",
+    "displayName": "Anju Integration Section"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "eyebrow": {
+      "type": "string"
+    },
+    "heading": {
+      "type": "text"
+    },
+    "description": {
+      "type": "text"
+    },
+    "ctaHeading": {
+      "type": "string"
+    },
+    "ctaDescription": {
+      "type": "string"
+    },
+    "ctaButtonText": {
+      "type": "string"
+    },
+    "ctaButtonLink": {
+      "type": "string"
+    }
+  }
+}

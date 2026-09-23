@@ -1,21 +1,148 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import Button from './motion/Button'
 
-export default function Contact() {
+const CONTACT_ENDPOINT = 'http://localhost:1337/api/contact'
+const CONTACT_SUBMIT_ENDPOINT = 'http://localhost:1337/api/contact/submit'
+
+type ContactFields = {
+  eyebrow?: string
+  heading?: string
+  description?: string
+  locationLabel?: string
+  location?: string
+  websiteLabel?: string
+  website?: string
+  specialtiesLabel?: string
+  specialties?: string
+  phoneLabel?: string
+  phoneNumber?: string
+  emailContactLabel?: string
+  emailContact?: string
+  nameLabel?: string
+  namePlaceholder?: string
+  companyLabel?: string
+  companyPlaceholder?: string
+  emailLabel?: string
+  emailPlaceholder?: string
+  helpLabel?: string
+  helpPlaceholder?: string
+  buttonText?: string
+  successHeading?: string
+  successMessage?: string
+  footerCompany?: string
+  footerCopyright?: string
+}
+
+type ContactEntry = ContactFields & {
+  id?: number
+  documentId?: string
+  attributes?: ContactFields
+}
+
+// Strapi v5 flat objects; tolerate either a single-type shape (data: object)
+// or a collection-type shape (data: array) since either could back this
+// endpoint, and take the first/only entry.
+type StrapiContactResponse = {
+  data?: ContactEntry | ContactEntry[] | null
+}
+
+function pickEntry(data: StrapiContactResponse['data']): ContactEntry | null {
+  if (!data) return null
+  return Array.isArray(data) ? (data[0] ?? null) : data
+}
+
+function normalize(entry: ContactEntry): ContactFields {
+  // Strapi v5 returns flat fields; fall back to the v4 `attributes` shape.
+  return entry.attributes ?? entry
+}
+
+// Footer nav — same routes/anchors already used in Nav.tsx. Hash entries
+// are plain in-page anchors (Contact only ever renders on the homepage, so
+// no cross-route handling is needed); page entries go through the client
+// router so they don't trigger a full page reload.
+const FOOTER_LINKS: { label: string; href: string; isPage?: boolean }[] = [
+  { label: 'Services', href: '#services' },
+  { label: 'Why Us', href: '#why-us' },
+  { label: 'Careers', href: '/careers', isPage: true },
+  { label: 'Blog', href: '/blog', isPage: true },
+  { label: 'Contact', href: '#contact' },
+]
+
+type ContactProps = {
+  navigate: (to: string) => void
+}
+
+export default function Contact({ navigate }: ContactProps) {
   const [form, setForm] = useState({ name: '', email: '', company: '', message: '' })
   const [focusedField, setFocusedField] = useState<string | null>(null)
   const [sent, setSent] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
+  const [submitError, setSubmitError] = useState<string | null>(null)
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [contact, setContact] = useState<ContactFields | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    const controller = new AbortController()
+
+    async function loadContact() {
+      try {
+        const response = await fetch(CONTACT_ENDPOINT, { signal: controller.signal })
+        if (!response.ok) throw new Error(`Request failed with status ${response.status}.`)
+
+        const payload: StrapiContactResponse = await response.json()
+        const entry = pickEntry(payload.data)
+
+        setContact(entry ? normalize(entry) : null)
+        setError(null)
+      } catch (err) {
+        if (controller.signal.aborted) return
+        setContact(null)
+        setError(err instanceof Error ? err.message : 'Unable to reach the contact API.')
+      } finally {
+        if (!controller.signal.aborted) setLoading(false)
+      }
+    }
+
+    loadContact()
+    return () => controller.abort()
+  }, [])
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setSent(true)
+    if (submitting) return
+
+    setSubmitting(true)
+    setSubmitError(null)
+
+    try {
+      const response = await fetch(CONTACT_SUBMIT_ENDPOINT, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form),
+      })
+
+      const payload: { success?: boolean; error?: string } = await response.json().catch(() => ({}))
+
+      if (!response.ok || !payload.success) {
+        throw new Error(payload.error || `Request failed with status ${response.status}.`)
+      }
+
+      setSent(true)
+    } catch (err) {
+      setSubmitError(err instanceof Error ? err.message : 'Could not send your message. Please try again.')
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   const inputStyle = (field: string): React.CSSProperties => ({
     width: '100%',
     padding: '0.75rem 1rem',
     fontSize: '0.9375rem',
-    backgroundColor: 'rgba(255,255,255,0.07)',
-    border: `1px solid ${focusedField === field ? 'var(--accent)' : 'rgba(255,255,255,0.15)'}`,
+    backgroundColor: 'var(--panel-input)',
+    border: `1px solid ${focusedField === field ? 'var(--panel-accent)' : 'var(--panel-border-strong)'}`,
     borderRadius: 'var(--radius)',
     color: 'var(--footer-fg)',
     fontFamily: 'var(--font-body-family)',
@@ -28,7 +155,7 @@ export default function Contact() {
     fontSize: '0.625rem',
     letterSpacing: '0.1em',
     textTransform: 'uppercase' as const,
-    color: 'rgba(238,238,245,0.45)',
+    color: 'var(--panel-fg-subtle)',
     display: 'block',
     marginBottom: '0.375rem',
   }
@@ -40,13 +167,37 @@ export default function Contact() {
 
           {/* Left column */}
           <div>
+            {loading && (
+              <div style={{
+                fontFamily: 'var(--font-mono-family)',
+                fontSize: '0.75rem',
+                letterSpacing: '0.08em',
+                color: 'var(--panel-fg-muted)',
+                marginBottom: '1rem',
+              }}>
+                Loading contact content…
+              </div>
+            )}
+
+            {!loading && error && (
+              <div style={{
+                fontFamily: 'var(--font-mono-family)',
+                fontSize: '0.75rem',
+                letterSpacing: '0.06em',
+                color: 'var(--accent-warm)',
+                marginBottom: '1rem',
+              }}>
+                Contact content unavailable. {error}
+              </div>
+            )}
+
             <div
               style={{
                 fontFamily: 'var(--font-mono-family)',
                 fontSize: '0.6875rem',
                 letterSpacing: '0.14em',
                 textTransform: 'uppercase',
-                color: 'var(--accent)',
+                color: 'var(--panel-accent)',
                 fontWeight: 500,
                 marginBottom: '0.875rem',
                 display: 'flex',
@@ -54,8 +205,8 @@ export default function Contact() {
                 gap: '0.75rem',
               }}
             >
-              <span style={{ display: 'inline-block', width: '2rem', height: '1px', backgroundColor: 'var(--accent)' }} />
-              Get in touch
+              <span style={{ display: 'inline-block', width: '2rem', height: '1px', backgroundColor: 'var(--panel-accent)' }} />
+              {contact?.eyebrow ?? ''}
             </div>
             <h2
               style={{
@@ -68,41 +219,60 @@ export default function Contact() {
                 marginBottom: '1.5rem',
               }}
             >
-              {"Let's build something that lasts."}
+              {contact?.heading ?? ''}
             </h2>
             <p
               style={{
                 fontSize: '0.9375rem',
                 lineHeight: 1.7,
-                color: 'rgba(238,238,245,0.55)',
+                color: 'var(--panel-fg-muted)',
                 marginBottom: '3rem',
                 maxWidth: '26rem',
               }}
             >
-              Whether you're evaluating ERPNext for the first time or need to migrate from legacy software, we'll start with an honest, no-pressure discovery call.
+              {contact?.description ?? ''}
             </p>
 
             <div className="flex flex-col gap-6">
-              {[
-                { label: 'Location', value: 'Kitchener, Ontario, Canada N2G 0C7' },
-                { label: 'Website', value: 'inanovai.com' },
-                { label: 'Specialties', value: 'ERPNext · Frappe · ERP · CRM · HRM · Business Intelligence' },
-              ].map((item) => (
-                <div key={item.label}>
+              {(
+                [
+                  { label: contact?.locationLabel ?? '', value: contact?.location ?? '' },
+                  { label: contact?.websiteLabel ?? '', value: contact?.website ?? '' },
+                  { label: contact?.specialtiesLabel ?? '', value: contact?.specialties ?? '' },
+                  ...(contact?.phoneNumber?.trim()
+                    ? [{ label: contact?.phoneLabel ?? '', value: contact.phoneNumber.trim(), href: `tel:${contact.phoneNumber.trim()}` }]
+                    : []),
+                  ...(contact?.emailContact?.trim()
+                    ? [{ label: contact?.emailContactLabel ?? '', value: contact.emailContact.trim(), href: `mailto:${contact.emailContact.trim()}` }]
+                    : []),
+                ] as { label: string; value: string; href?: string }[]
+              ).map((item, i) => (
+                <div key={i}>
                   <div
                     style={{
                       fontFamily: 'var(--font-mono-family)',
                       fontSize: '0.625rem',
                       letterSpacing: '0.12em',
                       textTransform: 'uppercase',
-                      color: 'rgba(238,238,245,0.4)',
+                      color: 'var(--panel-fg-subtle)',
                       marginBottom: '0.375rem',
                     }}
                   >
                     {item.label}
                   </div>
-                  <div style={{ fontSize: '0.9375rem', color: 'rgba(238,238,245,0.8)', lineHeight: 1.6 }}>
-                    {item.value}
+                  <div style={{ fontSize: '0.9375rem', color: 'var(--panel-fg-body)', lineHeight: 1.6 }}>
+                    {item.href ? (
+                      <a
+                        href={item.href}
+                        style={{ color: 'inherit', textDecoration: 'none', transition: 'color 0.15s' }}
+                        onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--panel-fg)')}
+                        onMouseLeave={(e) => (e.currentTarget.style.color = 'inherit')}
+                      >
+                        {item.value}
+                      </a>
+                    ) : (
+                      item.value
+                    )}
                   </div>
                 </div>
               ))}
@@ -114,14 +284,14 @@ export default function Contact() {
             {sent ? (
               <div
                 style={{
-                  backgroundColor: 'rgba(255,255,255,0.05)',
-                  border: '1px solid rgba(255,255,255,0.12)',
+                  backgroundColor: 'var(--panel-surface-2)',
+                  border: '1px solid var(--panel-border)',
                   borderRadius: 'var(--radius)',
                   padding: '3rem 2rem',
                   textAlign: 'center',
                 }}
               >
-                <div style={{ fontSize: '2rem', marginBottom: '1rem', color: 'var(--accent)' }}>✓</div>
+                <div style={{ fontSize: '2rem', marginBottom: '1rem', color: 'var(--panel-accent)' }}>✓</div>
                 <h3
                   style={{
                     fontFamily: 'var(--font-display-family)',
@@ -131,22 +301,36 @@ export default function Contact() {
                     marginBottom: '0.625rem',
                   }}
                 >
-                  Message received.
+                  Message sent successfully
                 </h3>
-                <p style={{ color: 'rgba(238,238,245,0.55)', fontSize: '0.9375rem' }}>
-                  {"We'll be in touch within one business day."}
+                <p style={{ color: 'var(--panel-fg-muted)', fontSize: '0.9375rem', marginBottom: '1.5rem' }}>
+                  Thank you for reaching out. We'll get back to you soon.
                 </p>
+                <Button
+                  as="button"
+                  type="button"
+                  variant="secondary"
+                  onClick={() => {
+                    setForm({ name: '', email: '', company: '', message: '' })
+                    setFocusedField(null)
+                    setSubmitError(null)
+                    setSent(false)
+                  }}
+                  style={{ padding: '0.75rem 1.75rem' }}
+                >
+                  Send another message
+                </Button>
               </div>
             ) : (
               <form onSubmit={handleSubmit} className="flex flex-col gap-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label htmlFor="contact-name" style={labelStyle}>Name</label>
+                    <label htmlFor="contact-name" style={labelStyle}>{contact?.nameLabel ?? ''}</label>
                     <input
                       id="contact-name"
                       type="text"
                       required
-                      placeholder="Sarah Chen"
+                      placeholder={contact?.namePlaceholder ?? ''}
                       value={form.name}
                       onChange={(e) => setForm({ ...form, name: e.target.value })}
                       onFocus={() => setFocusedField('name')}
@@ -155,11 +339,11 @@ export default function Contact() {
                     />
                   </div>
                   <div>
-                    <label htmlFor="contact-company" style={labelStyle}>Company</label>
+                    <label htmlFor="contact-company" style={labelStyle}>{contact?.companyLabel ?? ''}</label>
                     <input
                       id="contact-company"
                       type="text"
-                      placeholder="Meridian Manufacturing"
+                      placeholder={contact?.companyPlaceholder ?? ''}
                       value={form.company}
                       onChange={(e) => setForm({ ...form, company: e.target.value })}
                       onFocus={() => setFocusedField('company')}
@@ -170,12 +354,12 @@ export default function Contact() {
                 </div>
 
                 <div>
-                  <label htmlFor="contact-email" style={labelStyle}>Email</label>
+                  <label htmlFor="contact-email" style={labelStyle}>{contact?.emailLabel ?? ''}</label>
                   <input
                     id="contact-email"
                     type="email"
                     required
-                    placeholder="sarah@meridianmfg.com"
+                    placeholder={contact?.emailPlaceholder ?? ''}
                     value={form.email}
                     onChange={(e) => setForm({ ...form, email: e.target.value })}
                     onFocus={() => setFocusedField('email')}
@@ -185,12 +369,12 @@ export default function Contact() {
                 </div>
 
                 <div>
-                  <label htmlFor="contact-message" style={labelStyle}>How can we help?</label>
+                  <label htmlFor="contact-message" style={labelStyle}>{contact?.helpLabel ?? ''}</label>
                   <textarea
                     id="contact-message"
                     required
                     rows={5}
-                    placeholder="We're a mid-size manufacturer looking to replace QuickBooks with ERPNext..."
+                    placeholder={contact?.helpPlaceholder ?? ''}
                     value={form.message}
                     onChange={(e) => setForm({ ...form, message: e.target.value })}
                     onFocus={() => setFocusedField('message')}
@@ -199,58 +383,79 @@ export default function Contact() {
                   />
                 </div>
 
-                <button
+                <Button
+                  as="button"
                   type="submit"
+                  variant="primary"
+                  aria-disabled={submitting}
                   style={{
-                    fontFamily: 'var(--font-display-family)',
-                    fontWeight: 700,
-                    fontSize: '0.9375rem',
-                    color: 'var(--accent-foreground)',
-                    backgroundColor: 'var(--accent)',
                     padding: '0.875rem 2rem',
-                    borderRadius: 'var(--radius)',
-                    border: 'none',
-                    cursor: 'pointer',
-                    letterSpacing: '0.01em',
                     alignSelf: 'flex-start',
-                    transition: 'opacity 0.2s',
+                    backgroundColor: 'var(--panel-accent-strong)',
+                    opacity: submitting ? 0.6 : 1,
+                    pointerEvents: submitting ? 'none' : 'auto',
                   }}
-                  onMouseEnter={(e) => (e.currentTarget.style.opacity = '0.88')}
-                  onMouseLeave={(e) => (e.currentTarget.style.opacity = '1')}
                 >
-                  Send Message
-                </button>
+                  {submitting ? 'Sending…' : (contact?.buttonText ?? '')}
+                </Button>
+
+                {submitError && (
+                  <p style={{ fontSize: '0.8125rem', color: 'var(--accent-warm)', margin: 0 }}>
+                    {submitError}
+                  </p>
+                )}
               </form>
             )}
           </div>
         </div>
 
-        {/* Footer bar */}
+        {/* Footer nav */}
         <div
-          style={{ borderTop: '1px solid rgba(238,238,245,0.1)', marginTop: '4rem', paddingTop: '2rem' }}
-          className="flex flex-col md:flex-row items-center justify-between gap-4"
+          style={{ borderTop: '1px solid var(--panel-border)', marginTop: '4rem', paddingTop: '2.5rem' }}
+          className="flex flex-col md:flex-row md:items-center md:justify-between gap-6"
         >
           <span
             style={{
               fontFamily: 'var(--font-display-family)',
               fontWeight: 800,
               fontSize: '1rem',
-              color: 'rgba(238,238,245,0.6)',
+              color: 'var(--panel-fg-muted)',
               letterSpacing: '-0.02em',
             }}
           >
-            iNanovai Technologies
+            {contact?.footerCompany ?? ''}
           </span>
+          <nav className="flex flex-wrap gap-x-6 gap-y-2">
+            {FOOTER_LINKS.map((link) => (
+              <a
+                key={link.label}
+                href={link.href}
+                onClick={link.isPage ? (e) => { e.preventDefault(); navigate(link.href) } : undefined}
+                style={{ fontSize: '0.8125rem', color: 'var(--panel-fg-subtle)', fontWeight: 500, transition: 'color 0.15s' }}
+                onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--panel-fg)')}
+                onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--panel-fg-subtle)')}
+              >
+                {link.label}
+              </a>
+            ))}
+          </nav>
+        </div>
+
+        {/* Footer bar */}
+        <div
+          style={{ borderTop: '1px solid var(--panel-border)', marginTop: '1.5rem', paddingTop: '1.5rem' }}
+          className="flex flex-col md:flex-row items-center justify-between gap-4"
+        >
           <span
             style={{
               fontFamily: 'var(--font-mono-family)',
               fontSize: '0.625rem',
               letterSpacing: '0.1em',
               textTransform: 'uppercase',
-              color: 'rgba(238,238,245,0.3)',
+              color: 'var(--panel-fg-faint)',
             }}
           >
-            © {new Date().getFullYear()} iNanovai Technologies Inc. — Kitchener, Ontario
+            © {new Date().getFullYear()} {contact?.footerCopyright ?? ''}
           </span>
         </div>
       </div>

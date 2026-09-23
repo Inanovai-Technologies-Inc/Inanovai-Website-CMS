@@ -1,0 +1,75 @@
+{
+  "kind": "singleType",
+  "collectionName": "contacts",
+  "info": {
+    "singularName": "contact",
+    "pluralName": "contacts",
+    "displayName": "Contact"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "eyebrow": {
+      "type": "string"
+    },
+    "heading": {
+      "type": "text"
+    },
+    "description": {
+      "type": "text"
+    },
+    "locationLabel": {
+      "type": "string"
+    },
+    "location": {
+      "type": "string"
+    },
+    "websiteLabel": {
+      "type": "string"
+    },
+    "website": {
+      "type": "string"
+    },
+    "specialtiesLabel": {
+      "type": "string"
+    },
+    "specialties": {
+      "type": "text"
+    },
+    "nameLabel": {
+      "type": "string"
+    },
+    "namePlaceholder": {
+      "type": "string"
+    },
+    "companyLabel": {
+      "type": "string"
+    },
+    "companyPlaceholder": {
+      "type": "string"
+    },
+    "emailLabel": {
+      "type": "string"
+    },
+    "emailPlaceholder": {
+      "type": "string"
+    },
+    "helpLabel": {
+      "type": "string"
+    },
+    "helpPlaceholder": {
+      "type": "text"
+    },
+    "buttonText": {
+      "type": "string"
+    },
+    "footerCompany": {
+      "type": "string"
+    },
+    "footerCopyright": {
+      "type": "string"
+    }
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "kind": "collectionType",
+  "collectionName": "home_chats",
+  "info": {
+    "singularName": "home-chat",
+    "pluralName": "home-chats",
+    "displayName": "Home Chat"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "userMessage1": {
+      "type": "string"
+    },
+    "anjuResponse1": {
+      "type": "text"
+    },
+    "userMessage2": {
+      "type": "string"
+    },
+    "anjuResponse2": {
+      "type": "text"
+    },
+    "thinkingText": {
+      "type": "string"
+    }
+  }
+}

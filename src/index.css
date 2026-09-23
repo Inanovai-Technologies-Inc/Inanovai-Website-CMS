@@ -25,6 +25,7 @@
 }
 
 :root {
+  color-scheme: light;
   --background: #FFFFFF;
   --foreground: #0A0A0F;
   --card: #F7F7F9;
@@ -35,21 +36,64 @@
   --secondary-foreground: #0A0A0F;
   --muted: #F7F7F9;
   --muted-foreground: #6B6B80;
-  --accent: #3D7EC8;
+  /* --accent is the text/mark blue; --accent-strong backs solid buttons so
+     white labels clear 4.5:1. Both are the same hue, a shade apart. */
+  --accent: #3572B8;
+  --accent-strong: #3572B8;
   --accent-foreground: #FFFFFF;
-  --accent-warm: #E8461C;
+  --accent-warm: #CE3E19;
   --accent-warm-end: #F5861E;
   --border: #E4E4EC;
-  --ring: #3D7EC8;
-  --footer-bg: #0A0A0F;
-  --footer-fg: #EEEEF5;
+  --ring: #3572B8;
+  --footer-bg: #F7F7F9;
+  --footer-fg: #0A0A0F;
   --radius: 4px;
+  /* Structural chrome (nav, buttons, badges, inputs) stays sharp via
+     --radius; content surfaces (cards, media, elevated panels) use this
+     larger radius so the two layers read as distinct hierarchy. */
+  --radius-lg: 14px;
   --font-display-family: 'Plus Jakarta Sans', system-ui, sans-serif;
   --font-body-family: 'Manrope', system-ui, sans-serif;
   --font-mono-family: 'JetBrains Mono', monospace;
+
+  /* Elevation. Light mode: soft ambient shadows. Dark mode (below)
+     replaces these with accent-tinted glows — a black shadow is invisible
+     on a near-black surface. */
+  --shadow-sm: 0 1px 2px rgba(10, 10, 15, 0.04), 0 1px 1px rgba(10, 10, 15, 0.03);
+  --shadow-md: 0 8px 24px rgba(10, 10, 15, 0.08), 0 2px 8px rgba(10, 10, 15, 0.05);
+  --shadow-lg: 0 16px 48px rgba(10, 10, 15, 0.12), 0 4px 16px rgba(10, 10, 15, 0.06);
+
+  /* Used sparingly and intentionally: one Hero text accent, primary-CTA
+     hover glow, and section-divider fades — not a general-purpose fill. */
+  --gradient-brand: linear-gradient(135deg, var(--accent), var(--accent-warm-end));
+
+  /*
+   * Panel surfaces — the ANJU section and the contact footer.
+   * They follow the active theme like every other section: light surfaces
+   * with dark text here, dark surfaces with light text under .dark.
+   */
+  --panel-bg: #F7F7F9;
+  --panel-fg: #0A0A0F;
+  --panel-fg-body: rgba(10, 10, 15, 0.88);
+  --panel-fg-muted: rgba(10, 10, 15, 0.7);
+  --panel-fg-subtle: rgba(10, 10, 15, 0.6);
+  --panel-fg-faint: rgba(10, 10, 15, 0.45);
+  --panel-border: rgba(10, 10, 15, 0.12);
+  --panel-border-soft: rgba(10, 10, 15, 0.08);
+  --panel-border-strong: rgba(10, 10, 15, 0.22);
+  --panel-surface: #FFFFFF;
+  --panel-surface-2: #F0F0F4;
+  --panel-hover: rgba(10, 10, 15, 0.04);
+  --panel-input: #FFFFFF;
+  --panel-accent: #346FB4;
+  --panel-accent-strong: #346FB4;
+
+  /* Sits on an image scrim, so it is white in every theme. */
+  --on-media: #FFFFFF;
 }
 
 .dark {
+  color-scheme: dark;
   --background: #0C0C12;
   --foreground: #EEEEF5;
   --card: #13131A;
@@ -59,8 +103,9 @@
   --secondary: #1C1C26;
   --secondary-foreground: #EEEEF5;
   --muted: #18181F;
-  --muted-foreground: #8080A0;
+  --muted-foreground: #8C8CAC;
   --accent: #4D8FD6;
+  --accent-strong: #3E75B0;
   --accent-foreground: #FFFFFF;
   --accent-warm: #F05030;
   --accent-warm-end: #F5921E;
@@ -68,6 +113,29 @@
   --ring: #4D8FD6;
   --footer-bg: #06060A;
   --footer-fg: #EEEEF5;
+
+  /* Dark-theme panel surfaces — unchanged from the current dark design. */
+  --panel-bg: #06060A;
+  --panel-fg: #FFFFFF;
+  --panel-fg-body: rgba(238, 238, 245, 0.85);
+  --panel-fg-muted: rgba(238, 238, 245, 0.66);
+  --panel-fg-subtle: rgba(238, 238, 245, 0.52);
+  --panel-fg-faint: rgba(238, 238, 245, 0.42);
+  --panel-border: rgba(238, 238, 245, 0.12);
+  --panel-border-soft: rgba(238, 238, 245, 0.08);
+  --panel-border-strong: rgba(238, 238, 245, 0.22);
+  --panel-surface: rgba(255, 255, 255, 0.02);
+  --panel-surface-2: rgba(255, 255, 255, 0.05);
+  --panel-hover: rgba(238, 238, 245, 0.05);
+  --panel-input: rgba(255, 255, 255, 0.08);
+  --panel-accent: #4D8FD6;
+  --panel-accent-strong: #3E75B0;
+
+  /* A black shadow is invisible on a near-black surface, so dark mode gets
+     accent-tinted glows instead — same elevation purpose, different means. */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.4), 0 0 32px rgba(77, 143, 214, 0.06);
+  --shadow-lg: 0 16px 56px rgba(0, 0, 0, 0.5), 0 0 64px rgba(77, 143, 214, 0.1);
 }
 
 * {
@@ -78,12 +146,52 @@ html {
   scroll-behavior: smooth;
 }
 
+/* The navbar is sticky and 4rem tall, so scroll targets must clear it or
+   their headings land underneath it. */
+section[id],
+footer[id] {
+  scroll-margin-top: 4rem;
+}
+
 body {
   background-color: var(--background);
   color: var(--foreground);
   font-family: var(--font-body-family);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* Smooth theme switching. Scoped to structural surfaces so component-level
+   inline transitions (hover, transform, opacity) are left untouched. */
+body,
+nav,
+main,
+section,
+footer,
+article {
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  body,
+  nav,
+  main,
+  section,
+  footer,
+  article {
+    transition: none;
+  }
+}
+
+/* Placeholders must track the panel's own foreground scale rather than the
+   UA's theme-dependent grey, which ignores the surface it sits on. */
+#contact input::placeholder,
+#contact textarea::placeholder {
+  color: var(--panel-fg-faint);
 }
 
 ::-webkit-scrollbar {

@@ -255,7 +255,7 @@ function JobCard({ career }: { career: Career }) {
 
   return (
     <Card as="article">
-      <div style={{ padding: '1.75rem', display: 'flex', flexDirection: 'column', gap: '1.125rem' }}>
+      <div style={{ padding: '2rem', display: 'flex', flexDirection: 'column', gap: '1.125rem' }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem', marginBottom: '0.875rem' }}>
             {career.employmentType && (
@@ -442,7 +442,7 @@ export default function Careers() {
   return (
     <section id="careers" style={{ backgroundColor: 'var(--background)', borderTop: '1px solid var(--border)' }}>
       <div className="max-w-6xl mx-auto px-6 py-24">
-        <Reveal className="flex flex-col md:flex-row md:items-end md:justify-between gap-6 mb-14">
+        <Reveal className="flex flex-col md:flex-row md:items-end md:justify-between gap-6 mb-16">
           <div>
             <div style={eyebrowStyle}>
               <span style={{ display: 'inline-block', width: '2rem', height: '1px', backgroundColor: 'var(--accent)' }} />
@@ -482,7 +482,27 @@ export default function Careers() {
           </div>
         )}
 
-        {!loading && !error && careers.length > 0 && (
+        {!loading && !error && careers.length === 1 && (
+          <div className="flex justify-center">
+            <div style={{ width: '100%', maxWidth: '22rem' }}>
+              <Reveal>
+                <JobCard career={careers[0]} />
+              </Reveal>
+            </div>
+          </div>
+        )}
+
+        {!loading && !error && careers.length === 2 && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start max-w-3xl mx-auto">
+            {careers.map((career, i) => (
+              <Reveal key={career.key} delay={staggerDelay(i)}>
+                <JobCard career={career} />
+              </Reveal>
+            ))}
+          </div>
+        )}
+
+        {!loading && !error && careers.length > 2 && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-start">
             {careers.map((career, i) => (
               <Reveal key={career.key} delay={staggerDelay(i)}>

@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
 import Reveal, { staggerDelay } from './motion/Reveal'
 import { EASE } from './motion/ease'
-import FinalCta from './FinalCta'
 
 const BLOGS_ENDPOINT = 'http://localhost:1337/api/blogs'
 const STRAPI_BASE_URL = 'http://localhost:1337'
@@ -196,10 +195,9 @@ export default function BlogPage({ navigate }: BlogPageProps) {
   }
 
   return (
-    <>
     <section id="blog" style={{ backgroundColor: 'var(--background)', borderTop: '1px solid var(--border)' }}>
       <div className="max-w-6xl mx-auto px-6 py-24">
-        <Reveal className="mb-14">
+        <Reveal className="mb-16">
           <div style={{
             fontFamily: 'var(--font-mono-family)',
             fontSize: '0.6875rem',
@@ -243,8 +241,28 @@ export default function BlogPage({ navigate }: BlogPageProps) {
           <div style={statusStyle}>No articles published yet.</div>
         )}
 
-        {!loading && !error && blogs.length > 0 && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {!loading && !error && blogs.length === 1 && (
+          <div className="flex justify-center">
+            <div style={{ width: '100%', maxWidth: '22rem' }}>
+              <Reveal>
+                <BlogTile blog={blogs[0]} onNavigate={goToPost} />
+              </Reveal>
+            </div>
+          </div>
+        )}
+
+        {!loading && !error && blogs.length === 2 && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl mx-auto">
+            {blogs.map((blog, i) => (
+              <Reveal key={blog.key} delay={staggerDelay(i)}>
+                <BlogTile blog={blog} onNavigate={goToPost} />
+              </Reveal>
+            ))}
+          </div>
+        )}
+
+        {!loading && !error && blogs.length > 2 && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {blogs.map((blog, i) => (
               <Reveal key={blog.key} delay={staggerDelay(i)}>
                 <BlogTile blog={blog} onNavigate={goToPost} />
@@ -254,8 +272,5 @@ export default function BlogPage({ navigate }: BlogPageProps) {
         )}
       </div>
     </section>
-
-    <FinalCta navigate={navigate} />
-    </>
   )
 }

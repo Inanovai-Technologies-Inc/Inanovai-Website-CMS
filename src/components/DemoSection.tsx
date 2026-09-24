@@ -138,7 +138,7 @@ function normalizeSection(entry: DemoSectionEntry): DemoSectionFields {
 // about what happens on click.
 function RequestArrowIcon() {
   return (
-    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="var(--accent)" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M2.5 7h9M7.5 3.5 11 7l-3.5 3.5" />
     </svg>
   )
@@ -218,6 +218,7 @@ function DemoTile({ demo, onPlay }: { demo: Demo; onPlay: (demo: Demo) => void }
               height: '3rem',
               borderRadius: '50%',
               backgroundColor: 'var(--background)',
+              color: 'var(--accent)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -446,7 +447,7 @@ export default function DemoSection() {
   return (
     <section id="demos" style={{ backgroundColor: 'var(--background)', borderTop: '1px solid var(--border)' }}>
       <div className="max-w-6xl mx-auto px-6 py-24">
-        <Reveal className="flex flex-col md:flex-row md:items-end md:justify-between gap-6 mb-14">
+        <Reveal className="flex flex-col md:flex-row md:items-end md:justify-between gap-6 mb-16">
           <div>
             <div style={{
               fontFamily: 'var(--font-mono-family)',
@@ -496,7 +497,7 @@ export default function DemoSection() {
         )}
 
         {!loading && !error && demos.length > 0 && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {demos.map((demo, i) => (
               <Reveal key={demo.key} delay={staggerDelay(i)}>
                 <DemoTile demo={demo} onPlay={setActiveDemo} />

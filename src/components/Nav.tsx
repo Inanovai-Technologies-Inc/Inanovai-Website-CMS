@@ -15,9 +15,7 @@ const NAV_ITEMS: { label: string; target: string | null; href?: string }[] = [
   { label: 'Why Us', target: 'why-us' },
   { label: 'Careers', target: null, href: '/careers' },
   { label: 'Blog', target: null, href: '/blog' },
-  // Company details (legal name, location, website, specialties) live in the
-  // contact footer, so About points there rather than at a new page.
-  { label: 'About', target: 'contact' },
+  { label: 'About', target: null, href: '/about' },
 ]
 
 function prefersReducedMotion() {

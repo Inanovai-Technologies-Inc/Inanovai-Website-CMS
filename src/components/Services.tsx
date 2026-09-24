@@ -19,6 +19,7 @@ type ServiceEntry = {
   highlight?: boolean
   cta?: string
   href?: string
+  slug?: string | null
 }
 
 type StrapiCollectionResponse = {
@@ -50,6 +51,10 @@ function toCta(value: string | undefined): string {
 }
 
 function normalize(entry: ServiceEntry, i: number): Service {
+  // A valid slug always wins: it routes to that service's own detail page
+  // instead of falling back to the CMS's plain in-page `href`.
+  const slug = entry.slug?.trim()
+
   return {
     key: entry.documentId ?? String(entry.id),
     index: String(i + 1).padStart(2, '0'),
@@ -59,7 +64,7 @@ function normalize(entry: ServiceEntry, i: number): Service {
     tags: toTags(entry.tags),
     highlight: entry.highlight === true,
     cta: toCta(entry.cta),
-    href: entry.href ?? '#contact',
+    href: slug ? `/services/${slug}` : (entry.href ?? '#contact'),
   }
 }
 
@@ -112,7 +117,11 @@ function normalizeSection(entry: ServiceSectionEntry): ServiceSectionFields {
   return entry.attributes ?? entry
 }
 
-export default function Services() {
+type ServicesProps = {
+  navigate: (to: string) => void
+}
+
+export default function Services({ navigate }: ServicesProps) {
   const [section, setSection] = useState<ServiceSectionFields | null>(null)
   const [sectionLoading, setSectionLoading] = useState(true)
   const [sectionError, setSectionError] = useState<string | null>(null)
@@ -236,7 +245,7 @@ export default function Services() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {services.map((service, i) => (
               <Reveal key={service.key} delay={staggerDelay(i)}>
-                <Card className="group" style={{ padding: '2.25rem', display: 'flex', flexDirection: 'column', height: '100%' }}>
+                <Card className="group" style={{ padding: '2rem', display: 'flex', flexDirection: 'column', height: '100%' }}>
                   {/* Category + index row */}
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem' }}>
                     <span style={{
@@ -298,6 +307,17 @@ export default function Services() {
                     </div>
                     <a
                       href={service.href}
+                      onClick={(e) => {
+                        // Single source of truth: whatever href is actually
+                        // rendered on this anchor decides the click behavior,
+                        // so the two can never diverge. A route (leading "/")
+                        // always goes through client-side navigation instead
+                        // of a full page load; anything else (an in-page
+                        // "#anchor") keeps the browser's native behavior.
+                        if (!service.href.startsWith('/')) return
+                        e.preventDefault()
+                        navigate(service.href)
+                      }}
                       style={{
                         fontFamily: 'var(--font-mono-family)',
                         fontSize: '0.625rem',

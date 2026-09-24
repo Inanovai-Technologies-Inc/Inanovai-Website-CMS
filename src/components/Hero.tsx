@@ -487,7 +487,7 @@ export default function Hero() {
         {/* Stats row — the ANJU stat's value stays fixed brand copy; the
             other three values and all four labels come from Strapi. Numeric
             values count up once when this row scrolls into view. */}
-        <Reveal className="mt-20 flex flex-wrap gap-12" style={{ borderTop: '1px solid var(--border)', paddingTop: '2.5rem' }}>
+        <Reveal className="mt-12 md:mt-20 flex flex-wrap gap-8 md:gap-12 pt-8 md:pt-10" style={{ borderTop: '1px solid var(--border)' }}>
           {[
             { id: 'anju', value: 'ANJU', label: hero?.anjuStatLabel ?? '' },
             { id: 'erp', value: hero?.erpStat ?? '', label: hero?.erpStatLabel ?? '' },

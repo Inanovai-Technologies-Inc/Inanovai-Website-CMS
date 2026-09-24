@@ -227,7 +227,7 @@ export default function WhyUs() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {pillars.map((pillar, i) => (
               <Reveal key={pillar.key} delay={staggerDelay(i)}>
-                <Card style={{ padding: '2rem 2.25rem', height: '100%', backgroundColor: 'var(--background)' }}>
+                <Card style={{ padding: '2rem', height: '100%', backgroundColor: 'var(--background)' }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.125rem' }}>
                     <span style={{
                       fontFamily: 'var(--font-mono-family)',

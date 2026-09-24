@@ -46,7 +46,7 @@ const statusStyle = {
   letterSpacing: '0.06em',
   color: 'var(--panel-fg-muted)',
   border: '1px solid var(--panel-border)',
-  borderRadius: '6px',
+  borderRadius: 'var(--radius-lg)',
   padding: '2.5rem',
   textAlign: 'center',
 } as const
@@ -323,7 +323,7 @@ function ChatPanel({ scenario }: { scenario: Scenario }) {
   return (
     <div style={{
       border: '1px solid var(--panel-border)',
-      borderRadius: '6px',
+      borderRadius: 'var(--radius-lg)',
       overflow: 'hidden',
       backgroundColor: 'var(--panel-surface)',
     }}>
@@ -639,7 +639,7 @@ export default function Anju() {
         borderTop: '1px solid var(--border)',
       }}
     >
-      <div className="max-w-6xl mx-auto px-6 py-28">
+      <div className="max-w-6xl mx-auto px-6 py-24">
 
         {/* Header */}
         <Reveal className="mb-20 grid grid-cols-1 lg:grid-cols-2 gap-12 items-end">
@@ -702,7 +702,7 @@ export default function Anju() {
         {!loading && !error && capabilities.length > 0 && (
           <Reveal
             className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 mb-24"
-            style={{ border: '1px solid var(--panel-border)', overflow: 'hidden', borderRadius: '6px' }}
+            style={{ border: '1px solid var(--panel-border)', overflow: 'hidden', borderRadius: 'var(--radius-lg)' }}
           >
             {capabilities.map((cap, i) => {
               // Cells keep the original three-column rule: a right border
@@ -807,7 +807,7 @@ export default function Anju() {
           marginTop: '4rem',
           padding: '2.5rem',
           border: '1px solid var(--panel-border)',
-          borderRadius: '6px',
+          borderRadius: 'var(--radius-lg)',
           backgroundColor: 'var(--panel-surface)',
         }}>
           <div className="flex flex-col md:flex-row md:items-center gap-8">
@@ -871,7 +871,7 @@ export default function Anju() {
                       minWidth: '160px',
                       padding: '1.25rem',
                       border: '1px solid var(--panel-border-soft)',
-                      borderRadius: '6px',
+                      borderRadius: 'var(--radius-lg)',
                       backgroundColor: 'var(--panel-surface)',
                       transition: 'border-color 0.2s, background-color 0.2s',
                       cursor: 'default',

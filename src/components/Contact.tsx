@@ -29,8 +29,6 @@ type ContactFields = {
   buttonText?: string
   successHeading?: string
   successMessage?: string
-  footerCompany?: string
-  footerCopyright?: string
 }
 
 type ContactEntry = ContactFields & {
@@ -56,23 +54,24 @@ function normalize(entry: ContactEntry): ContactFields {
   return entry.attributes ?? entry
 }
 
-// Footer nav — same routes/anchors already used in Nav.tsx. Hash entries
-// are plain in-page anchors (Contact only ever renders on the homepage, so
-// no cross-route handling is needed); page entries go through the client
-// router so they don't trigger a full page reload.
-const FOOTER_LINKS: { label: string; href: string; isPage?: boolean }[] = [
-  { label: 'Services', href: '#services' },
-  { label: 'Why Us', href: '#why-us' },
-  { label: 'Careers', href: '/careers', isPage: true },
-  { label: 'Blog', href: '/blog', isPage: true },
-  { label: 'Contact', href: '#contact' },
-]
+const infoLabelStyle = {
+  fontFamily: 'var(--font-mono-family)',
+  fontSize: '0.625rem',
+  letterSpacing: '0.12em',
+  textTransform: 'uppercase',
+  color: 'var(--panel-fg-subtle)',
+  marginBottom: '0.375rem',
+} as const
 
-type ContactProps = {
-  navigate: (to: string) => void
+function PhoneIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M6.6 10.8c1.4 2.8 3.8 5.2 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1C10.9 21 3 13.1 3 3.9c0-.6.4-1 1-1H7.4c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.3 0 .7-.2 1L6.6 10.8Z" />
+    </svg>
+  )
 }
 
-export default function Contact({ navigate }: ContactProps) {
+export default function Contact() {
   const [form, setForm] = useState({ name: '', email: '', company: '', message: '' })
   const [focusedField, setFocusedField] = useState<string | null>(null)
   const [sent, setSent] = useState(false)
@@ -161,7 +160,7 @@ export default function Contact({ navigate }: ContactProps) {
   }
 
   return (
-    <footer id="contact" style={{ backgroundColor: 'var(--footer-bg)', color: 'var(--footer-fg)' }}>
+    <section id="contact" style={{ backgroundColor: 'var(--footer-bg)', color: 'var(--footer-fg)' }}>
       <div className="max-w-6xl mx-auto px-6 py-24">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
 
@@ -234,48 +233,57 @@ export default function Contact({ navigate }: ContactProps) {
             </p>
 
             <div className="flex flex-col gap-6">
-              {(
-                [
-                  { label: contact?.locationLabel ?? '', value: contact?.location ?? '' },
-                  { label: contact?.websiteLabel ?? '', value: contact?.website ?? '' },
-                  { label: contact?.specialtiesLabel ?? '', value: contact?.specialties ?? '' },
-                  ...(contact?.phoneNumber?.trim()
-                    ? [{ label: contact?.phoneLabel ?? '', value: contact.phoneNumber.trim(), href: `tel:${contact.phoneNumber.trim()}` }]
-                    : []),
-                  ...(contact?.emailContact?.trim()
-                    ? [{ label: contact?.emailContactLabel ?? '', value: contact.emailContact.trim(), href: `mailto:${contact.emailContact.trim()}` }]
-                    : []),
-                ] as { label: string; value: string; href?: string }[]
-              ).map((item, i) => (
+              {[
+                { label: contact?.locationLabel ?? '', value: contact?.location ?? '' },
+                { label: contact?.websiteLabel ?? '', value: contact?.website ?? '' },
+                { label: contact?.specialtiesLabel ?? '', value: contact?.specialties ?? '' },
+              ].map((item, i) => (
                 <div key={i}>
-                  <div
-                    style={{
-                      fontFamily: 'var(--font-mono-family)',
-                      fontSize: '0.625rem',
-                      letterSpacing: '0.12em',
-                      textTransform: 'uppercase',
-                      color: 'var(--panel-fg-subtle)',
-                      marginBottom: '0.375rem',
-                    }}
-                  >
-                    {item.label}
-                  </div>
+                  <div style={infoLabelStyle}>{item.label}</div>
                   <div style={{ fontSize: '0.9375rem', color: 'var(--panel-fg-body)', lineHeight: 1.6 }}>
-                    {item.href ? (
-                      <a
-                        href={item.href}
-                        style={{ color: 'inherit', textDecoration: 'none', transition: 'color 0.15s' }}
-                        onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--panel-fg)')}
-                        onMouseLeave={(e) => (e.currentTarget.style.color = 'inherit')}
-                      >
-                        {item.value}
-                      </a>
-                    ) : (
-                      item.value
-                    )}
+                    {item.value}
                   </div>
                 </div>
               ))}
+
+              {contact?.phoneNumber?.trim() && (
+                <div>
+                  <div style={infoLabelStyle}>{contact.phoneLabel ?? ''}</div>
+                  <a
+                    href={`tel:${contact.phoneNumber.trim()}`}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '0.5rem',
+                      fontSize: '0.9375rem',
+                      color: 'inherit',
+                      textDecoration: 'none',
+                      transition: 'color 0.15s',
+                    }}
+                    onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--panel-accent)')}
+                    onMouseLeave={(e) => (e.currentTarget.style.color = 'inherit')}
+                  >
+                    <PhoneIcon />
+                    {contact.phoneNumber.trim()}
+                  </a>
+                </div>
+              )}
+
+              {contact?.emailContact?.trim() && (
+                <div>
+                  <div style={infoLabelStyle}>{contact.emailContactLabel ?? ''}</div>
+                  <div style={{ fontSize: '0.9375rem', color: 'var(--panel-fg-body)', lineHeight: 1.6 }}>
+                    <a
+                      href={`mailto:${contact.emailContact.trim()}`}
+                      style={{ color: 'inherit', textDecoration: 'none', transition: 'color 0.15s' }}
+                      onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--panel-fg)')}
+                      onMouseLeave={(e) => (e.currentTarget.style.color = 'inherit')}
+                    >
+                      {contact.emailContact.trim()}
+                    </a>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
@@ -408,57 +416,7 @@ export default function Contact({ navigate }: ContactProps) {
             )}
           </div>
         </div>
-
-        {/* Footer nav */}
-        <div
-          style={{ borderTop: '1px solid var(--panel-border)', marginTop: '4rem', paddingTop: '2.5rem' }}
-          className="flex flex-col md:flex-row md:items-center md:justify-between gap-6"
-        >
-          <span
-            style={{
-              fontFamily: 'var(--font-display-family)',
-              fontWeight: 800,
-              fontSize: '1rem',
-              color: 'var(--panel-fg-muted)',
-              letterSpacing: '-0.02em',
-            }}
-          >
-            {contact?.footerCompany ?? ''}
-          </span>
-          <nav className="flex flex-wrap gap-x-6 gap-y-2">
-            {FOOTER_LINKS.map((link) => (
-              <a
-                key={link.label}
-                href={link.href}
-                onClick={link.isPage ? (e) => { e.preventDefault(); navigate(link.href) } : undefined}
-                style={{ fontSize: '0.8125rem', color: 'var(--panel-fg-subtle)', fontWeight: 500, transition: 'color 0.15s' }}
-                onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--panel-fg)')}
-                onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--panel-fg-subtle)')}
-              >
-                {link.label}
-              </a>
-            ))}
-          </nav>
-        </div>
-
-        {/* Footer bar */}
-        <div
-          style={{ borderTop: '1px solid var(--panel-border)', marginTop: '1.5rem', paddingTop: '1.5rem' }}
-          className="flex flex-col md:flex-row items-center justify-between gap-4"
-        >
-          <span
-            style={{
-              fontFamily: 'var(--font-mono-family)',
-              fontSize: '0.625rem',
-              letterSpacing: '0.1em',
-              textTransform: 'uppercase',
-              color: 'var(--panel-fg-faint)',
-            }}
-          >
-            © {new Date().getFullYear()} {contact?.footerCopyright ?? ''}
-          </span>
-        </div>
       </div>
-    </footer>
+    </section>
   )
 }

@@ -1,9 +1,8 @@
-import { useEffect, useRef, useState, type ElementType, type ReactNode } from 'react'
-import { motion, useReducedMotion, useScroll, useTransform } from 'framer-motion'
+import { useEffect, useState, type ElementType, type ReactNode } from 'react'
+import { motion, useReducedMotion } from 'framer-motion'
 import { EASE } from './motion/ease'
 import Reveal, { staggerDelay } from './motion/Reveal'
 import { BlogTile } from './BlogPage'
-import FinalCta from './FinalCta'
 
 const BLOGS_ENDPOINT = 'http://localhost:1337/api/blogs'
 const STRAPI_BASE_URL = 'http://localhost:1337'
@@ -241,39 +240,6 @@ const statusStyle = {
   textAlign: 'center',
 } as const
 
-// A restrained vertical parallax on the cover image: the image drifts a
-// little slower than the page scrolls, scaled up so the drift never shows
-// a gap at the edges. Static under prefers-reduced-motion.
-function CoverImage({ src, alt }: { src: string; alt: string }) {
-  const ref = useRef<HTMLDivElement>(null)
-  const shouldReduceMotion = useReducedMotion()
-  const { scrollYProgress } = useScroll({ target: ref, offset: ['start end', 'end start'] })
-  const y = useTransform(scrollYProgress, [0, 1], ['-6%', '6%'])
-
-  return (
-    <div
-      ref={ref}
-      style={{
-        position: 'relative',
-        overflow: 'hidden',
-        borderRadius: 'var(--radius-lg)',
-        border: '1px solid var(--border)',
-        backgroundColor: 'var(--muted)',
-        aspectRatio: '16/9',
-        boxShadow: 'var(--shadow-lg)',
-        marginBottom: '2.5rem',
-      }}
-    >
-      <motion.img
-        src={src}
-        alt={alt}
-        className="w-full h-full object-cover"
-        style={shouldReduceMotion ? undefined : { y, scale: 1.15 }}
-      />
-    </div>
-  )
-}
-
 type BlogPostPageProps = {
   slug: string
   navigate: (to: string) => void
@@ -357,7 +323,6 @@ export default function BlogPostPage({ slug, navigate }: BlogPostPageProps) {
   }
 
   return (
-    <>
     <section style={{ backgroundColor: 'var(--background)', borderTop: '1px solid var(--border)' }}>
       <div className="max-w-3xl mx-auto px-6 py-24">
         <a
@@ -448,8 +413,6 @@ export default function BlogPostPage({ slug, navigate }: BlogPostPageProps) {
               </p>
             )}
 
-            {blog.img && <CoverImage src={blog.img} alt={blog.alt} />}
-
             <div>{renderRichText(blog.content)}</div>
           </motion.article>
         )}
@@ -467,19 +430,39 @@ export default function BlogPostPage({ slug, navigate }: BlogPostPageProps) {
             }}>
               Related articles
             </Reveal>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-              {related.map((post, i) => (
-                <Reveal key={post.key} delay={staggerDelay(i)}>
-                  <BlogTile blog={post} onNavigate={goToRelated} />
-                </Reveal>
-              ))}
-            </div>
+
+            {related.length === 1 && (
+              <div className="flex justify-center">
+                <div style={{ width: '100%', maxWidth: '22rem' }}>
+                  <Reveal>
+                    <BlogTile blog={related[0]} onNavigate={goToRelated} />
+                  </Reveal>
+                </div>
+              </div>
+            )}
+
+            {related.length === 2 && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {related.map((post, i) => (
+                  <Reveal key={post.key} delay={staggerDelay(i)}>
+                    <BlogTile blog={post} onNavigate={goToRelated} />
+                  </Reveal>
+                ))}
+              </div>
+            )}
+
+            {related.length > 2 && (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {related.map((post, i) => (
+                  <Reveal key={post.key} delay={staggerDelay(i)}>
+                    <BlogTile blog={post} onNavigate={goToRelated} />
+                  </Reveal>
+                ))}
+              </div>
+            )}
           </div>
         )}
       </div>
     </section>
-
-    <FinalCta navigate={navigate} />
-    </>
   )
 }

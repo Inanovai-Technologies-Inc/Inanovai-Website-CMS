@@ -288,6 +288,11 @@ export default function Services({ navigate }: ServicesProps) {
                     {service.description}
                   </p>
 
+                  {/* Absorbs whatever height the description didn't use, so
+                      tags + CTA land at the same bottom position on every
+                      card regardless of description length. */}
+                  <div style={{ flex: 1 }} />
+
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '0.75rem' }}>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.375rem' }}>
                       {service.tags.map((tag) => (

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Reveal, { staggerDelay } from './motion/Reveal'
 import Card from './motion/Card'
 import Button from './motion/Button'
@@ -20,6 +20,7 @@ type RichText = string | RichTextNode[] | null
 
 type CareerFields = {
   title?: string
+  slug?: string
   location?: string
   employmentType?: string
   experience?: string
@@ -80,6 +81,7 @@ type StrapiCollectionResponse = {
 
 type Career = {
   key: string
+  slug: string
   title: string
   location: string
   employmentType: string
@@ -120,6 +122,7 @@ function normalize(entry: CareerEntry): Career {
 
   return {
     key: entry.documentId ?? String(entry.id),
+    slug: fields.slug ?? '',
     title: fields.title ?? 'Open Position',
     location: fields.location ?? '',
     employmentType: fields.employmentType ?? '',
@@ -248,14 +251,41 @@ function DetailList({ label, items }: { label: string; items: string[] }) {
   )
 }
 
-function JobCard({ career }: { career: Career }) {
-  const [open, setOpen] = useState(false)
+type JobCardProps = {
+  career: Career
+  isOpen: boolean
+  onToggle: () => void
+  minHeight?: number
+  contentRef: (el: HTMLDivElement | null) => void
+}
+
+// Details are toggled by the parent (one open card at a time across the
+// whole grid — see Careers()'s `openKey` state) rather than local state, so
+// opening one card's details collapses whichever other card was open.
+//
+// Equal height for the collapsed content comes from a shared `minHeight`
+// (measured by the parent, see Careers()'s ResizeObserver) rather than CSS
+// Grid's align-items:stretch — stretch would tie every card in a row to the
+// row's tallest item, so opening one card's details (which grows only that
+// card) would force its siblings to grow too. The grid instead uses
+// `items-start`, so each card sizes independently and only the one that's
+// expanded gets taller.
+function JobCard({ career, isOpen: open, onToggle, minHeight, contentRef }: JobCardProps) {
   const hasDetails = career.responsibilities.length > 0 || career.requirements.length > 0
   const detailsId = `career-details-${career.key}`
 
   return (
-    <Card as="article">
-      <div style={{ padding: '2rem', display: 'flex', flexDirection: 'column', gap: '1.125rem' }}>
+    <Card as="article" style={{ display: 'flex', flexDirection: 'column' }}>
+      <div
+        ref={contentRef}
+        style={{
+          padding: '2rem',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '1.125rem',
+          minHeight: minHeight ? `${minHeight}px` : undefined,
+        }}
+      >
         <div>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem', marginBottom: '0.875rem' }}>
             {career.employmentType && (
@@ -317,30 +347,27 @@ function JobCard({ career }: { career: Career }) {
           </div>
         )}
 
+        {/* Absorbs whatever height the description/skills didn't use (up to
+            the shared minHeight floor), so the buttons land at the same
+            bottom position on every card regardless of content length. */}
+        <div style={{ flex: 1 }} />
+
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
-          {career.applicationLink ? (
-            <Button
-              as="a"
-              href={career.applicationLink}
-              target="_blank"
-              rel="noopener noreferrer"
-              variant="primary"
-              style={{ fontSize: '0.8125rem', padding: '0.5rem 1.25rem' }}
-            >
-              Apply Now
-            </Button>
-          ) : (
-            <Button as="a" href="#contact" variant="primary" style={{ fontSize: '0.8125rem', padding: '0.5rem 1.25rem' }}>
-              Apply Now
-            </Button>
-          )}
+          <Button
+            as="a"
+            href={`/careers/${encodeURIComponent(career.slug)}/apply`}
+            variant="primary"
+            style={{ fontSize: '0.8125rem', padding: '0.5rem 1.25rem' }}
+          >
+            Apply Now
+          </Button>
 
           {hasDetails && (
             <Button
               as="button"
               type="button"
               variant="secondary"
-              onClick={() => setOpen(!open)}
+              onClick={onToggle}
               aria-expanded={open}
               aria-controls={detailsId}
               style={{
@@ -417,6 +444,41 @@ export default function Careers() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
+  // Only one card's details open at a time across the whole grid.
+  const [openKey, setOpenKey] = useState<string | null>(null)
+  const toggleOpen = (key: string) => setOpenKey((current) => (current === key ? null : key))
+
+  // Shared floor height for every card's collapsed content, measured (not
+  // hardcoded) from each card's own natural height so it adapts to whatever
+  // the current copy and viewport width need. Kept in a ref, not state, so
+  // measuring never itself triggers a render loop; only the derived max
+  // does. ResizeObserver re-fires on viewport/breakpoint changes too, so
+  // this stays correct on resize without a separate listener.
+  const cardHeightsRef = useRef<Map<string, number>>(new Map())
+  const resizeObserverRef = useRef<ResizeObserver | null>(null)
+  const [cardMinHeight, setCardMinHeight] = useState(0)
+
+  useEffect(() => {
+    const heights = cardHeightsRef.current
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const key = (entry.target as HTMLElement).dataset.careerKey
+        if (key) heights.set(key, entry.borderBoxSize?.[0]?.blockSize ?? entry.contentRect.height)
+      }
+      setCardMinHeight(Math.max(0, ...heights.values()))
+    })
+    resizeObserverRef.current = observer
+
+    return () => observer.disconnect()
+  }, [])
+
+  const cardContentRef = (key: string) => (el: HTMLDivElement | null) => {
+    const observer = resizeObserverRef.current
+    if (!el || !observer) return
+    el.dataset.careerKey = key
+    observer.observe(el)
+  }
+
   useEffect(() => {
     const controller = new AbortController()
 
@@ -486,7 +548,13 @@ export default function Careers() {
           <div className="flex justify-center">
             <div style={{ width: '100%', maxWidth: '22rem' }}>
               <Reveal>
-                <JobCard career={careers[0]} />
+                <JobCard
+                  career={careers[0]}
+                  isOpen={openKey === careers[0].key}
+                  onToggle={() => toggleOpen(careers[0].key)}
+                  minHeight={cardMinHeight}
+                  contentRef={cardContentRef(careers[0].key)}
+                />
               </Reveal>
             </div>
           </div>
@@ -496,7 +564,13 @@ export default function Careers() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start max-w-3xl mx-auto">
             {careers.map((career, i) => (
               <Reveal key={career.key} delay={staggerDelay(i)}>
-                <JobCard career={career} />
+                <JobCard
+                  career={career}
+                  isOpen={openKey === career.key}
+                  onToggle={() => toggleOpen(career.key)}
+                  minHeight={cardMinHeight}
+                  contentRef={cardContentRef(career.key)}
+                />
               </Reveal>
             ))}
           </div>
@@ -506,7 +580,13 @@ export default function Careers() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-start">
             {careers.map((career, i) => (
               <Reveal key={career.key} delay={staggerDelay(i)}>
-                <JobCard career={career} />
+                <JobCard
+                  career={career}
+                  isOpen={openKey === career.key}
+                  onToggle={() => toggleOpen(career.key)}
+                  minHeight={cardMinHeight}
+                  contentRef={cardContentRef(career.key)}
+                />
               </Reveal>
             ))}
           </div>

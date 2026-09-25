@@ -136,18 +136,23 @@ export default function Contact() {
     }
   }
 
-  const inputStyle = (field: string): React.CSSProperties => ({
-    width: '100%',
-    padding: '0.75rem 1rem',
-    fontSize: '0.9375rem',
-    backgroundColor: 'var(--panel-input)',
-    border: `1px solid ${focusedField === field ? 'var(--panel-accent)' : 'var(--panel-border-strong)'}`,
-    borderRadius: 'var(--radius)',
-    color: 'var(--footer-fg)',
-    fontFamily: 'var(--font-body-family)',
-    outline: 'none',
-    transition: 'border-color 0.15s',
-  })
+  const inputStyle = (field: string): React.CSSProperties => {
+    const isFocused = focusedField === field
+    return {
+      width: '100%',
+      padding: '0.6875rem 0.875rem',
+      fontSize: '0.9375rem',
+      lineHeight: 1.6,
+      backgroundColor: 'var(--panel-input)',
+      border: `1px solid ${isFocused ? 'var(--panel-accent)' : 'var(--panel-border-strong)'}`,
+      borderRadius: 'var(--radius)',
+      color: 'var(--footer-fg)',
+      fontFamily: 'var(--font-body-family)',
+      outline: 'none',
+      boxShadow: isFocused ? '0 0 0 2.5px color-mix(in srgb, var(--panel-accent) 14%, transparent)' : 'none',
+      transition: 'border-color 0.15s, box-shadow 0.15s',
+    }
+  }
 
   const labelStyle: React.CSSProperties = {
     fontFamily: 'var(--font-mono-family)',
@@ -156,7 +161,7 @@ export default function Contact() {
     textTransform: 'uppercase' as const,
     color: 'var(--panel-fg-subtle)',
     display: 'block',
-    marginBottom: '0.375rem',
+    marginBottom: '0.5rem',
   }
 
   return (
@@ -330,8 +335,18 @@ export default function Contact() {
                 </Button>
               </div>
             ) : (
-              <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-                <div className="grid grid-cols-2 gap-4">
+              <form
+                onSubmit={handleSubmit}
+                className="flex flex-col gap-4"
+                style={{
+                  backgroundColor: 'var(--panel-surface-2)',
+                  border: '1px solid var(--panel-border-soft)',
+                  borderRadius: 'var(--radius)',
+                  padding: '1.75rem',
+                  boxShadow: 'var(--shadow-sm)',
+                }}
+              >
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label htmlFor="contact-name" style={labelStyle}>{contact?.nameLabel ?? ''}</label>
                     <input
@@ -396,8 +411,11 @@ export default function Contact() {
                   type="submit"
                   variant="primary"
                   aria-disabled={submitting}
+                  hoverBackgroundColor="color-mix(in srgb, var(--panel-accent-strong) 88%, white 12%)"
                   style={{
-                    padding: '0.875rem 2rem',
+                    width: '10rem',
+                    padding: '0.625rem 1rem',
+                    fontSize: '0.875rem',
                     alignSelf: 'flex-start',
                     backgroundColor: 'var(--panel-accent-strong)',
                     opacity: submitting ? 0.6 : 1,

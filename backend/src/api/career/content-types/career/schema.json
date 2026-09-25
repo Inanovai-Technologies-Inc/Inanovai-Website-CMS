@@ -43,6 +43,12 @@
     },
     "applicationLink": {
       "type": "string"
+    },
+    "applications": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::application.application",
+      "mappedBy": "career"
     }
   }
 }

@@ -5,6 +5,7 @@ import Services from './components/Services'
 import WhyUs from './components/WhyUs'
 import DemoSection from './components/DemoSection'
 import CareersPage from './components/CareersPage'
+import CareerApplicationPage from './components/CareerApplicationPage'
 import BlogPage from './components/BlogPage'
 import BlogPostPage from './components/BlogPostPage'
 import AboutPage from './components/AboutPage'
@@ -22,6 +23,7 @@ export default function App() {
   const { path, navigate } = useRouter()
   const isHome = path === '/'
   const isCareers = path === '/careers'
+  const isCareerApplication = path.startsWith('/careers/') && path.endsWith('/apply')
   const isBlogList = path === '/blog'
   const blogSlug = path.startsWith('/blog/') ? decodeURIComponent(path.slice('/blog/'.length)) : null
   const isBlogPost = Boolean(blogSlug)
@@ -31,9 +33,9 @@ export default function App() {
   // Unrecognized slugs under /blog/ or /services/ still resolve to their
   // respective detail pages, which show their own "not found" state — only
   // truly unknown top-level paths fall through to the site-wide 404.
-  const isKnownRoute = isHome || isCareers || isBlogList || isBlogPost || isAbout || isServiceDetail
+  const isKnownRoute = isHome || isCareers || isCareerApplication || isBlogList || isBlogPost || isAbout || isServiceDetail
   const isStandalonePage = !isHome
-  const routePage: RoutePage = isCareers
+  const routePage: RoutePage = isCareers || isCareerApplication
     ? 'careers'
     : isBlogList
     ? 'blog-list'
@@ -55,7 +57,9 @@ export default function App() {
         <div style={{ position: 'relative', zIndex: 1 }}>
           <Nav path={path} navigate={navigate} />
           <main>
-            {isCareers ? (
+            {isCareerApplication ? (
+              <CareerApplicationPage />
+            ) : isCareers ? (
               <CareersPage />
             ) : isBlogList ? (
               <BlogPage navigate={navigate} />

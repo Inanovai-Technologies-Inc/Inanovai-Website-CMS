@@ -18,6 +18,11 @@ type ButtonProps = AriaAttributes & {
   className?: string
   style?: CSSProperties
   onClick?: (e: MouseEvent<HTMLAnchorElement | HTMLButtonElement>) => void
+  // Opt-in override for a caller that sets its own `backgroundColor` (which
+  // otherwise wins over the variant's hover state, since `style` is spread
+  // last) and still wants a brightened hover tint. Unused by every other
+  // call site, so this has no effect on the default variant hover.
+  hoverBackgroundColor?: string
 }
 
 // The one interactive treatment for every CTA on the site: a small lift on
@@ -35,6 +40,7 @@ export default function Button({
   className,
   style,
   onClick,
+  hoverBackgroundColor,
   ...aria
 }: ButtonProps) {
   const shouldReduceMotion = useReducedMotion()
@@ -84,6 +90,7 @@ export default function Button({
         transition: 'box-shadow 0.2s ease, border-color 0.2s ease, background-color 0.2s ease',
         ...variantStyle,
         ...style,
+        ...(hovered && hoverBackgroundColor ? { backgroundColor: hoverBackgroundColor } : null),
       }}
     >
       {children}

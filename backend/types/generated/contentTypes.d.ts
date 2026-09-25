@@ -604,6 +604,43 @@ export interface ApiAnjuSectionAnjuSection extends Struct.SingleTypeSchema {
   };
 }
 
+export interface ApiApplicationApplication extends Struct.CollectionTypeSchema {
+  collectionName: 'applications';
+  info: {
+    displayName: 'Application';
+    pluralName: 'applications';
+    singularName: 'application';
+  };
+  options: {
+    draftAndPublish: true;
+  };
+  attributes: {
+    career: Schema.Attribute.Relation<'manyToOne', 'api::career.career'>;
+    coverMessage: Schema.Attribute.Text;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    email: Schema.Attribute.Email;
+    fullName: Schema.Attribute.String;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::application.application'
+    > &
+      Schema.Attribute.Private;
+    phone: Schema.Attribute.String;
+    publishedAt: Schema.Attribute.DateTime;
+    resume: Schema.Attribute.Media<'images' | 'videos' | 'audios' | 'files'>;
+    statuses: Schema.Attribute.Enumeration<
+      ['new', 'reviewing', 'shortlisted', 'rejected', 'hired']
+    >;
+    submittedAt: Schema.Attribute.DateTime;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+  };
+}
+
 export interface ApiBlogBlog extends Struct.CollectionTypeSchema {
   collectionName: 'blogs';
   info: {
@@ -679,6 +716,10 @@ export interface ApiCareerCareer extends Struct.CollectionTypeSchema {
   };
   attributes: {
     applicationLink: Schema.Attribute.String;
+    applications: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::application.application'
+    >;
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
@@ -1534,6 +1575,7 @@ declare module '@strapi/strapi' {
       'api::anju-integration.anju-integration': ApiAnjuIntegrationAnjuIntegration;
       'api::anju-scenario.anju-scenario': ApiAnjuScenarioAnjuScenario;
       'api::anju-section.anju-section': ApiAnjuSectionAnjuSection;
+      'api::application.application': ApiApplicationApplication;
       'api::blog.blog': ApiBlogBlog;
       'api::career-section.career-section': ApiCareerSectionCareerSection;
       'api::career.career': ApiCareerCareer;

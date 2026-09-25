@@ -1,2 +1,2 @@
 #!/bin/bash
-pnpm run build && pnpm run preview
+npm run build && npm run preview

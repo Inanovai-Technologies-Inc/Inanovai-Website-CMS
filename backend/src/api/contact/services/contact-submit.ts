@@ -9,6 +9,7 @@
  */
 
 import type { Core } from '@strapi/strapi';
+import { createFrappeLead } from '../../../services/frappe';
 
 export type ContactSubmissionInput = {
   name: string;
@@ -86,10 +87,26 @@ export default ({ strapi }: { strapi: Core.Strapi }) => ({
         text,
         html,
       });
-      return { ok: true };
     } catch (err) {
       strapi.log.error('Failed to send contact enquiry email', err as Error);
       return { ok: false, status: 502, error: 'Could not send your message right now. Please try again in a moment.' };
     }
+
+    const frappeResult = await createFrappeLead({
+      name: fields.name,
+      email: fields.email,
+      company: fields.company,
+      leadOwner: process.env.FRAPPE_LEAD_ASSIGNEE?.trim() ?? '',
+    });
+
+    if (!frappeResult.ok) {
+      const logMessage = frappeResult.skipped
+        ? 'Contact enquiry email sent, but Frappe Lead creation was skipped because the integration is not fully configured.'
+        : `Contact enquiry email sent, but Frappe Lead creation failed${frappeResult.status ? ` with status ${frappeResult.status}` : ''}.`;
+      strapi.log.warn(logMessage);
+      if (!frappeResult.skipped) strapi.log.error(frappeResult.error ?? 'Frappe Lead creation failed.');
+    }
+
+    return { ok: true };
   },
 });

@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef, type ReactNode } from 'react'
-import { useReducedMotion } from 'framer-motion'
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import Reveal from './motion/Reveal'
 import Button from './motion/Button'
+import { EASE } from './motion/ease'
 
 const CAPABILITIES_ENDPOINT = 'http://localhost:1337/api/anju-capabilities'
 
@@ -243,6 +244,273 @@ const PLATFORM_VISUAL_ALIASES: Record<string, keyof typeof PLATFORM_VISUALS> = {
 function getPlatformVisual(icon: string) {
   const key = PLATFORM_VISUAL_ALIASES[normalizeIconKey(icon)]
   return key ? PLATFORM_VISUALS[key] : PLATFORM_VISUALS.teams
+}
+
+type PlatformDemoKey = keyof typeof PLATFORM_VISUALS
+
+type PlatformTurn = {
+  user: string
+  response: string
+}
+
+type PlatformMessage = {
+  id: number
+  role: 'user' | 'assistant'
+  content: string
+}
+
+type PlatformDemo = {
+  title: string
+  turns: PlatformTurn[]
+}
+
+const PLATFORM_DEMOS: Record<PlatformDemoKey, PlatformDemo> = {
+  teams: {
+    title: 'Microsoft Teams',
+    turns: [
+      { user: 'Any purchase requests waiting for approval?', response: 'Yes. 2 purchase requests are waiting for approval.' },
+      { user: 'Show me the details.', response: 'PR-104 — Office equipment — ₹42,000\nPR-107 — Software licenses — ₹18,500' },
+      { user: 'Approve PR-104.', response: 'PR-104 is ready for approval. Confirm to proceed?' },
+      { user: 'Confirm.', response: 'PR-104 has been approved.' },
+    ],
+  },
+  googlechat: {
+    title: 'Google Chat',
+    turns: [
+      { user: "Give me today's business summary.", response: "Today's summary:\nRevenue: ₹18.4L\nPending POs: 3\nLow-stock items: 5" },
+      { user: 'What needs attention first?', response: '2 inventory items are critically low and 1 purchase order is overdue.' },
+      { user: 'Show the critical items.', response: 'Product A — 12 units\nProduct C — 8 units' },
+    ],
+  },
+  whatsapp: {
+    title: 'WhatsApp',
+    turns: [
+      { user: 'Check stock for Product A.', response: 'Product A has 124 units available. The reorder point is 150 units. Reorder is recommended.' },
+      { user: 'Create a reorder request.', response: "I've prepared a reorder request for Product A. Please confirm before submitting." },
+      { user: 'Confirm.', response: 'Reorder request created successfully.' },
+    ],
+  },
+  telegram: {
+    title: 'Telegram',
+    turns: [
+      { user: 'Any urgent operational alerts?', response: '2 alerts need attention:\n• Product A — low stock\n• PO-108 — pending approval' },
+      { user: 'Show Product A.', response: 'Product A has 12 units remaining. The reorder point is 50 units.' },
+      { user: 'Create a reorder request.', response: 'Reorder request prepared. Confirm to submit?' },
+      { user: 'Confirm.', response: 'Reorder request submitted.' },
+    ],
+  },
+}
+
+function PlatformDemoPanel({ platform, onClose }: { platform: PlatformDemoKey; onClose: () => void }) {
+  const shouldReduceMotion = useReducedMotion()
+  const [messages, setMessages] = useState<PlatformMessage[]>([])
+  const [input, setInput] = useState('')
+  const [isTyping, setIsTyping] = useState(false)
+  const conversationRef = useRef<HTMLDivElement>(null)
+  const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const visual = PLATFORM_VISUALS[platform]
+  const demo = PLATFORM_DEMOS[platform]
+  const lastResponse = demo.turns[demo.turns.length - 1].response
+  const isComplete = messages.some((message) => message.role === 'assistant' && message.content === lastResponse)
+
+  const normalizeMessage = (message: string) => message.trim().toLowerCase()
+
+  const getResponse = (message: string) => {
+    const matchingTurn = demo.turns.find((turn) => normalizeMessage(turn.user) === normalizeMessage(message))
+    return matchingTurn?.response ?? "That's available in the full ANJU experience. Try one of the suggested business questions above."
+  }
+
+  const sendMessage = (message = input) => {
+    const trimmed = message.trim()
+    if (!trimmed || isTyping) return
+
+    const response = getResponse(trimmed)
+    const messageId = Date.now()
+    setMessages((previous) => [...previous, { id: messageId, role: 'user', content: trimmed }])
+    setInput('')
+    setIsTyping(true)
+    typingTimeoutRef.current = setTimeout(() => {
+      setMessages((previous) => [...previous, { id: messageId + 1, role: 'assistant', content: response }])
+      setIsTyping(false)
+      typingTimeoutRef.current = null
+    }, shouldReduceMotion ? 0 : 650)
+  }
+
+  const resetConversation = () => {
+    if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current)
+    typingTimeoutRef.current = null
+    setMessages([])
+    setInput('')
+    setIsTyping(false)
+  }
+
+  const nextSuggestion = demo.turns.find((turn) => !messages.some((message) => message.role === 'user' && normalizeMessage(message.content) === normalizeMessage(turn.user)))?.user
+
+  useEffect(() => {
+    const conversation = conversationRef.current
+    if (!conversation) return
+    conversation.scrollTo({ top: conversation.scrollHeight, behavior: shouldReduceMotion ? 'auto' : 'smooth' })
+  }, [messages, isTyping, shouldReduceMotion])
+
+  useEffect(() => () => {
+    if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current)
+  }, [])
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onClose()
+    }
+
+    document.addEventListener('keydown', onKeyDown)
+    return () => document.removeEventListener('keydown', onKeyDown)
+  }, [onClose])
+
+  return (
+    <AnimatePresence>
+      <motion.div
+        role="presentation"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: shouldReduceMotion ? 0 : 0.2 }}
+        onMouseDown={(event) => {
+          if (event.target === event.currentTarget) onClose()
+        }}
+        style={{
+          position: 'fixed',
+          inset: 0,
+          zIndex: 50,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '1rem',
+          backgroundColor: 'color-mix(in srgb, var(--background) 82%, transparent)',
+          backdropFilter: 'blur(8px)',
+        }}
+      >
+        <motion.div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="anju-platform-demo-title"
+          initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 18, scale: shouldReduceMotion ? 1 : 0.98 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, y: shouldReduceMotion ? 0 : 10 }}
+          transition={{ duration: shouldReduceMotion ? 0 : 0.3, ease: EASE }}
+          style={{
+            width: 'min(100%, 34rem)',
+            maxHeight: 'min(720px, calc(100vh - 2rem))',
+            overflowY: 'auto',
+            border: '1px solid var(--panel-border)',
+            borderRadius: 'var(--radius-lg)',
+            backgroundColor: 'var(--panel-surface)',
+            boxShadow: 'var(--shadow-lg)',
+          }}
+        >
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '1rem',
+            padding: '1rem 1.25rem',
+            borderBottom: '1px solid var(--panel-border-soft)',
+            backgroundColor: 'var(--panel-surface-2)',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', minWidth: 0 }}>
+              <div style={{ flex: '0 0 auto' }}>{visual.icon}</div>
+              <div>
+                <div id="anju-platform-demo-title" style={{ fontFamily: 'var(--font-display-family)', fontSize: '1rem', fontWeight: 800, color: 'var(--panel-fg)' }}>
+                  ANJU · {demo.title}
+                </div>
+                <div style={{ marginTop: '0.25rem', fontFamily: 'var(--font-mono-family)', fontSize: '0.5625rem', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--panel-fg-faint)' }}>
+                  Concept demo · no live connection
+                </div>
+              </div>
+            </div>
+            <button
+              type="button"
+              aria-label={`Close ${demo.title} demo`}
+              onClick={onClose}
+              style={{ flex: '0 0 auto', width: '2rem', height: '2rem', border: '1px solid var(--panel-border-strong)', borderRadius: '50%', backgroundColor: 'transparent', color: 'var(--panel-fg-subtle)', fontSize: '1.25rem', lineHeight: 1, cursor: 'pointer' }}
+            >
+              ×
+            </button>
+          </div>
+
+          <div ref={conversationRef} aria-live="polite" style={{ maxHeight: 'min(48vh, 30rem)', overflowY: 'auto', padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <div style={{ fontFamily: 'var(--font-mono-family)', fontSize: '0.625rem', letterSpacing: '0.1em', textTransform: 'uppercase', color: visual.color }}>
+              What interacting with ANJU could look like
+            </div>
+
+            {messages.map((message) => (
+              <motion.div
+                key={message.id}
+                initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: shouldReduceMotion ? 0 : 0.28, ease: EASE }}
+                style={{ display: 'flex', justifyContent: message.role === 'user' ? 'flex-end' : 'flex-start' }}
+              >
+                <div style={{ maxWidth: message.role === 'user' ? '82%' : '88%', padding: message.role === 'user' ? '0.75rem 1rem' : '0.875rem 1rem', whiteSpace: 'pre-line', borderRadius: message.role === 'user' ? '12px 12px 2px 12px' : '12px 12px 12px 2px', backgroundColor: message.role === 'user' ? `color-mix(in srgb, ${visual.color} 16%, transparent)` : 'var(--panel-surface-2)', border: message.role === 'user' ? `1px solid color-mix(in srgb, ${visual.color} 35%, transparent)` : '1px solid var(--panel-border)', color: 'var(--panel-fg-body)', fontSize: '0.875rem', lineHeight: message.role === 'user' ? 1.6 : 1.7 }}>
+                  {message.role === 'assistant' && <div style={{ marginBottom: '0.375rem', fontFamily: 'var(--font-mono-family)', fontSize: '0.5625rem', letterSpacing: '0.12em', textTransform: 'uppercase', color: visual.color, fontWeight: 700 }}>ANJU</div>}
+                  {message.content}
+                </div>
+              </motion.div>
+            ))}
+
+            {isTyping && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                style={{ alignSelf: 'flex-start', padding: '0.625rem 0.875rem', borderRadius: '12px 12px 12px 2px', backgroundColor: 'var(--panel-surface-2)', border: '1px solid var(--panel-border)', color: 'var(--panel-fg-subtle)', fontFamily: 'var(--font-mono-family)', fontSize: '0.625rem', letterSpacing: '0.08em' }}
+              >
+                ANJU is typing...
+              </motion.div>
+            )}
+          </div>
+
+          <div style={{ padding: '0 1.25rem 1.25rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+            {nextSuggestion && !isTyping && (
+              <button
+                type="button"
+                onClick={() => sendMessage(nextSuggestion)}
+                style={{ alignSelf: 'flex-start', maxWidth: '100%', padding: '0.5rem 0.75rem', border: `1px solid color-mix(in srgb, ${visual.color} 40%, var(--panel-border))`, borderRadius: 'var(--radius)', backgroundColor: 'transparent', color: 'var(--panel-fg-body)', fontFamily: 'var(--font-body-family)', fontSize: '0.75rem', cursor: 'pointer', textAlign: 'left' }}
+              >
+                {nextSuggestion}
+              </button>
+            )}
+
+            <form onSubmit={(event) => { event.preventDefault(); sendMessage() }} style={{ display: 'flex', gap: '0.5rem', alignItems: 'stretch' }}>
+              <input
+                type="text"
+                value={input}
+                onChange={(event) => setInput(event.target.value)}
+                placeholder="Type a message..."
+                aria-label={`Message ANJU on ${demo.title}`}
+                disabled={isTyping}
+                style={{ minWidth: 0, flex: 1, padding: '0.7rem 0.8rem', border: '1px solid var(--panel-border-strong)', borderRadius: 'var(--radius)', backgroundColor: 'var(--panel-input)', color: 'var(--panel-fg-body)', fontFamily: 'var(--font-body-family)', fontSize: '0.8125rem', outline: 'none' }}
+              />
+              <button
+                type="submit"
+                disabled={!input.trim() || isTyping}
+                style={{ flex: '0 0 auto', padding: '0.7rem 0.9rem', border: 0, borderRadius: 'var(--radius)', backgroundColor: visual.color, color: '#fff', fontFamily: 'var(--font-mono-family)', fontSize: '0.625rem', letterSpacing: '0.08em', textTransform: 'uppercase', cursor: !input.trim() || isTyping ? 'not-allowed' : 'pointer', opacity: !input.trim() || isTyping ? 0.5 : 1 }}
+              >
+                Send
+              </button>
+            </form>
+
+            {isComplete && (
+              <button
+                type="button"
+                onClick={resetConversation}
+                style={{ alignSelf: 'flex-start', padding: 0, border: 0, backgroundColor: 'transparent', color: 'var(--panel-fg-subtle)', fontFamily: 'var(--font-mono-family)', fontSize: '0.625rem', letterSpacing: '0.08em', textTransform: 'uppercase', cursor: 'pointer' }}
+              >
+                Start again
+              </button>
+            )}
+          </div>
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
+  )
 }
 
 // ── Shared types ──────────────────────────────────────────────
@@ -602,6 +870,7 @@ export default function Anju() {
   const [integrationCards, setIntegrationCards] = useState<IntegrationCard[]>([])
   const [integrationCardsLoading, setIntegrationCardsLoading] = useState(true)
   const [integrationCardsError, setIntegrationCardsError] = useState<string | null>(null)
+  const [activePlatform, setActivePlatform] = useState<PlatformDemoKey | null>(null)
 
   useEffect(() => {
     const controller = new AbortController()
@@ -863,9 +1132,20 @@ export default function Anju() {
 
               {!integrationCardsLoading && !integrationCardsError && integrationCards.map((card) => {
                 const visual = getPlatformVisual(card.icon)
+                const platformKey = PLATFORM_VISUAL_ALIASES[normalizeIconKey(card.icon)] ?? PLATFORM_VISUAL_ALIASES[normalizeIconKey(card.name)]
                 return (
                   <div
                     key={card.key}
+                    role="button"
+                    tabIndex={platformKey ? 0 : -1}
+                    aria-label={platformKey ? `Open ${card.name} ANJU demo` : card.name}
+                    onClick={() => platformKey && setActivePlatform(platformKey)}
+                    onKeyDown={(event) => {
+                      if (platformKey && (event.key === 'Enter' || event.key === ' ')) {
+                        event.preventDefault()
+                        setActivePlatform(platformKey)
+                      }
+                    }}
                     style={{
                       flex: '1 1 calc(50% - 0.5rem)',
                       minWidth: '160px',
@@ -874,7 +1154,7 @@ export default function Anju() {
                       borderRadius: 'var(--radius-lg)',
                       backgroundColor: 'var(--panel-surface)',
                       transition: 'border-color 0.2s, background-color 0.2s',
-                      cursor: 'default',
+                      cursor: platformKey ? 'pointer' : 'default',
                     }}
                     onMouseEnter={(e) => {
                       e.currentTarget.style.borderColor = `color-mix(in srgb, ${visual.color} 40%, transparent)`
@@ -910,6 +1190,10 @@ export default function Anju() {
             </div>
           </div>
         </Reveal>
+
+        {activePlatform && (
+          <PlatformDemoPanel platform={activePlatform} onClose={() => setActivePlatform(null)} />
+        )}
 
         {/* CTA strip */}
         <Reveal style={{

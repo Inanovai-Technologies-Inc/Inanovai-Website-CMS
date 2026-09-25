@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
+import { STRAPI_URL } from '../config'
 import Reveal from './motion/Reveal'
 import Button from './motion/Button'
 
-const CONTACT_ENDPOINT = 'http://localhost:1337/api/contact'
+const CONTACT_ENDPOINT = `${STRAPI_URL}/api/contact`
 
 // Reuses the Contact section's own eyebrow/heading/description fields —
 // one source of truth for "how we talk about getting in touch" instead of

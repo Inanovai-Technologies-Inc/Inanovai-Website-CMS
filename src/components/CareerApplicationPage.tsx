@@ -1,10 +1,11 @@
 import { useEffect, useState, type CSSProperties, type FormEvent } from 'react'
+import { STRAPI_URL } from '../config'
 import Card from './motion/Card'
 import Reveal from './motion/Reveal'
 import Button from './motion/Button'
 
-const CAREERS_ENDPOINT = 'http://localhost:1337/api/careers'
-const APPLICATION_SUBMIT_ENDPOINT = 'http://localhost:1337/api/applications/submit'
+const CAREERS_ENDPOINT = `${STRAPI_URL}/api/careers`
+const APPLICATION_SUBMIT_ENDPOINT = `${STRAPI_URL}/api/applications/submit`
 
 type CareerFields = {
   title?: string

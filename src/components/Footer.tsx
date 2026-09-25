@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
+import { STRAPI_URL } from '../config'
 
-const CONTACT_ENDPOINT = 'http://localhost:1337/api/contact'
+const CONTACT_ENDPOINT = `${STRAPI_URL}/api/contact`
 
 // Reuses the Contact section's own footerCompany/footerCopyright fields —
 // one source of truth instead of a second CMS type with overlapping copy.

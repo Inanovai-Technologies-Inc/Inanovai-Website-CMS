@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
+import { STRAPI_URL } from '../config'
 import Reveal, { staggerDelay } from './motion/Reveal'
 import Card from './motion/Card'
 import Button from './motion/Button'
 
-const CAREERS_ENDPOINT = 'http://localhost:1337/api/careers'
-const CAREER_SECTION_ENDPOINT = 'http://localhost:1337/api/career-section'
+const CAREERS_ENDPOINT = `${STRAPI_URL}/api/careers`
+const CAREER_SECTION_ENDPOINT = `${STRAPI_URL}/api/career-section`
 
 // Strapi pages collections (25 per request by default), so every page is walked.
 const PAGE_SIZE = 100

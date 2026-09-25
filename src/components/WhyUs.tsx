@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
+import { STRAPI_URL } from '../config'
 import Reveal, { staggerDelay } from './motion/Reveal'
 import Card from './motion/Card'
 
-const WHY_US_ENDPOINT = 'http://localhost:1337/api/why-uses'
-const WHY_US_SECTION_ENDPOINT = 'http://localhost:1337/api/why-us-section'
+const WHY_US_ENDPOINT = `${STRAPI_URL}/api/why-uses`
+const WHY_US_SECTION_ENDPOINT = `${STRAPI_URL}/api/why-us-section`
 
 // Strapi caps a collection request at 25 by default; ask for more so newly
 // added entries keep appearing without touching this file again.

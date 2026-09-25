@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react'
+import { STRAPI_URL } from '../config'
 import { motion, useReducedMotion } from 'framer-motion'
 import Reveal, { staggerDelay } from './motion/Reveal'
 import { EASE } from './motion/ease'
 
-const BLOGS_ENDPOINT = 'http://localhost:1337/api/blogs'
-const STRAPI_BASE_URL = 'http://localhost:1337'
+const BLOGS_ENDPOINT = `${STRAPI_URL}/api/blogs`
+const STRAPI_BASE_URL = STRAPI_URL
 
 // Strapi caps a collection request at 25 by default; ask for more so newly
 // added posts keep appearing without touching this file again.

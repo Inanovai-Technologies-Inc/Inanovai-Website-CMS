@@ -39,6 +39,8 @@ export default defineConfig({
   preview: {
     host: '0.0.0.0',
     port: parseInt(process.env.PORT || '8443'),
+    // Railway serves the app on its own *.up.railway.app / custom domains.
+    allowedHosts: true,
   },
 })
 

@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
+import { STRAPI_URL } from '../config'
 import Button from './motion/Button'
 
-const CONTACT_ENDPOINT = 'http://localhost:1337/api/contact'
-const CONTACT_SUBMIT_ENDPOINT = 'http://localhost:1337/api/contact/submit'
+const CONTACT_ENDPOINT = `${STRAPI_URL}/api/contact`
+const CONTACT_SUBMIT_ENDPOINT = `${STRAPI_URL}/api/contact/submit`
 
 type ContactFields = {
   eyebrow?: string

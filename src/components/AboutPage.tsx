@@ -1,10 +1,11 @@
 import { useEffect, useState, type ElementType, type ReactNode } from 'react'
+import { STRAPI_URL } from '../config'
 import Reveal from './motion/Reveal'
 import Card from './motion/Card'
 
-const ABOUT_ENDPOINT = 'http://localhost:1337/api/about'
-const TEAM_MEMBERS_ENDPOINT = 'http://localhost:1337/api/team-members'
-const STRAPI_BASE_URL = 'http://localhost:1337'
+const ABOUT_ENDPOINT = `${STRAPI_URL}/api/about`
+const TEAM_MEMBERS_ENDPOINT = `${STRAPI_URL}/api/team-members`
+const STRAPI_BASE_URL = STRAPI_URL
 
 // Strapi caps a collection request at 25 by default; ask for more so newly
 // added team members keep appearing without touching this file again.

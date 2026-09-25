@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react'
+import { STRAPI_URL } from '../config'
 import { motion, useReducedMotion } from 'framer-motion'
 import { EASE } from './motion/ease'
 import Reveal, { staggerDelay } from './motion/Reveal'
 import Card from './motion/Card'
 
-const SERVICES_ENDPOINT = 'http://localhost:1337/api/services'
-const STRAPI_BASE_URL = 'http://localhost:1337'
+const SERVICES_ENDPOINT = `${STRAPI_URL}/api/services`
+const STRAPI_BASE_URL = STRAPI_URL
 
 type StrapiMedia = {
   id?: number

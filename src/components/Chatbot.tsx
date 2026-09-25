@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { STRAPI_URL } from '../config'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
@@ -6,7 +7,7 @@ import logoSrc from '../imports/image.png'
 import { EASE } from './motion/ease'
 import Button from './motion/Button'
 
-const CHATBOT_ENDPOINT = 'http://localhost:1337/api/chatbot'
+const CHATBOT_ENDPOINT = `${STRAPI_URL}/api/chatbot`
 const HISTORY_STORAGE_KEY = 'inanovai-chatbot-history'
 const MAX_STORED_MESSAGES = 20
 const MAX_MESSAGE_LENGTH = 2000

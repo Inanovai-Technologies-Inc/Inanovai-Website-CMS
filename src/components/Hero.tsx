@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { STRAPI_URL } from '../config'
 import {
   animate,
   motion,
@@ -13,8 +14,8 @@ import Button from './motion/Button'
 import Reveal from './motion/Reveal'
 import { EASE } from './motion/ease'
 
-const HERO_ENDPOINT = 'http://localhost:1337/api/homes'
-const HOME_CHAT_ENDPOINT = 'http://localhost:1337/api/home-chats'
+const HERO_ENDPOINT = `${STRAPI_URL}/api/homes`
+const HOME_CHAT_ENDPOINT = `${STRAPI_URL}/api/home-chats`
 
 type HeroFields = {
   eyebrow?: string

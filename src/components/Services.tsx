@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
+import { STRAPI_URL } from '../config'
 import Reveal, { staggerDelay } from './motion/Reveal'
 import Card from './motion/Card'
 
-const SERVICES_ENDPOINT = 'http://localhost:1337/api/services'
-const SERVICE_SECTION_ENDPOINT = 'http://localhost:1337/api/service-section'
+const SERVICES_ENDPOINT = `${STRAPI_URL}/api/services`
+const SERVICE_SECTION_ENDPOINT = `${STRAPI_URL}/api/service-section`
 
 // Strapi caps a collection request at 25 by default; ask for more so newly
 // added services keep appearing without touching this file again.

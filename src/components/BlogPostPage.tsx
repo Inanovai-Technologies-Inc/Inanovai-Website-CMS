@@ -1,11 +1,12 @@
 import { useEffect, useState, type ElementType, type ReactNode } from 'react'
+import { STRAPI_URL } from '../config'
 import { motion, useReducedMotion } from 'framer-motion'
 import { EASE } from './motion/ease'
 import Reveal, { staggerDelay } from './motion/Reveal'
 import { BlogTile } from './BlogPage'
 
-const BLOGS_ENDPOINT = 'http://localhost:1337/api/blogs'
-const STRAPI_BASE_URL = 'http://localhost:1337'
+const BLOGS_ENDPOINT = `${STRAPI_URL}/api/blogs`
+const STRAPI_BASE_URL = STRAPI_URL
 const RELATED_COUNT = 3
 
 type StrapiMedia = {

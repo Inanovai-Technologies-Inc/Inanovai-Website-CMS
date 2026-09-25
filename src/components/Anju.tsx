@@ -1,10 +1,11 @@
 import { useState, useEffect, useRef, type ReactNode } from 'react'
+import { STRAPI_URL } from '../config'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import Reveal from './motion/Reveal'
 import Button from './motion/Button'
 import { EASE } from './motion/ease'
 
-const CAPABILITIES_ENDPOINT = 'http://localhost:1337/api/anju-capabilities'
+const CAPABILITIES_ENDPOINT = `${STRAPI_URL}/api/anju-capabilities`
 
 // Strapi caps a collection request at 25 by default; ask for more so newly
 // added capabilities keep appearing without touching this file again.
@@ -52,9 +53,9 @@ const statusStyle = {
   textAlign: 'center',
 } as const
 
-const SCENARIOS_ENDPOINT = 'http://localhost:1337/api/anju-scenarios'
+const SCENARIOS_ENDPOINT = `${STRAPI_URL}/api/anju-scenarios`
 
-const ANJU_SECTION_ENDPOINT = 'http://localhost:1337/api/anju-section'
+const ANJU_SECTION_ENDPOINT = `${STRAPI_URL}/api/anju-section`
 
 // ── Section header types ────────────────────────────────────────
 type AnjuSectionFields = {
@@ -90,8 +91,8 @@ function normalizeAnjuSection(entry: AnjuSectionEntry): AnjuSectionFields {
 // Strapi's actual content type is the plural collection "anju-integrations"
 // (one published entry), not the singular single-type URL this originally
 // assumed — that mismatch is what produced the 404.
-const INTEGRATION_ENDPOINT = 'http://localhost:1337/api/anju-integrations'
-const INTEGRATION_CARDS_ENDPOINT = 'http://localhost:1337/api/anju-integration-cards'
+const INTEGRATION_ENDPOINT = `${STRAPI_URL}/api/anju-integrations`
+const INTEGRATION_CARDS_ENDPOINT = `${STRAPI_URL}/api/anju-integration-cards`
 
 // ── Integration strip types ─────────────────────────────────────
 type IntegrationEntry = {

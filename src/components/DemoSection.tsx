@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react'
+import { STRAPI_URL } from '../config'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import Reveal, { staggerDelay } from './motion/Reveal'
 import { EASE } from './motion/ease'
 
-const DEMOS_ENDPOINT = 'http://localhost:1337/api/demos'
-const DEMO_SECTION_ENDPOINT = 'http://localhost:1337/api/demo-section'
-const STRAPI_BASE_URL = 'http://localhost:1337'
+const DEMOS_ENDPOINT = `${STRAPI_URL}/api/demos`
+const DEMO_SECTION_ENDPOINT = `${STRAPI_URL}/api/demo-section`
+const STRAPI_BASE_URL = STRAPI_URL
 
 // Strapi caps a collection request at 25 by default; ask for more so newly
 // added demos keep appearing without touching this file again.

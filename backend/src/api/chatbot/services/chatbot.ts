@@ -33,7 +33,10 @@ type PageContext =
   | { page: 'blog-post'; slug: string }
   | { page: 'not-found' };
 
-const GEMINI_MODEL = 'gemini-3.5-flash';
+// Overridable via GEMINI_MODEL so a saturated model can be swapped without a
+// code change — Gemini returns 503 UNAVAILABLE ("high demand") per-model, and
+// gemini-3.5-flash was returning it consistently while siblings served fine.
+const GEMINI_MODEL = process.env.GEMINI_MODEL?.trim() || 'gemini-3.6-flash';
 const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
 const MAX_HISTORY_MESSAGES = 20;
 const MAX_TOKENS = 1024;

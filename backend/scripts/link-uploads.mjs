@@ -28,14 +28,24 @@ const link = path.join(appDir, 'public', 'uploads');
 fs.mkdirSync(target, { recursive: true });
 fs.mkdirSync(path.join(volume, 'db'), { recursive: true });
 
-// public/uploads ships as a real directory; symlinking onto it would nest the
-// link inside it rather than replace it, so clear whatever is there first.
+// public/uploads ships as a real directory, and `strapi transfer` deletes and
+// recreates it as one too — which silently strips this link and puts the
+// imported assets back on the ephemeral disk. So treat a real directory here
+// as files that still need rescuing: copy them onto the volume before the
+// link replaces it, rather than deleting them outright.
 const existing = fs.lstatSync(link, { throwIfNoEntry: false });
 if (existing?.isSymbolicLink()) {
   if (fs.realpathSync(link) === fs.realpathSync(target)) {
     process.exit(0);
   }
   fs.unlinkSync(link);
+} else if (existing?.isDirectory()) {
+  const rescued = fs.readdirSync(link).filter((f) => f !== '.gitkeep');
+  if (rescued.length > 0) {
+    fs.cpSync(link, target, { recursive: true, force: true });
+    console.log(`[link-uploads] moved ${rescued.length} file(s) onto the volume`);
+  }
+  fs.rmSync(link, { recursive: true, force: true });
 } else if (existing) {
   fs.rmSync(link, { recursive: true, force: true });
 }

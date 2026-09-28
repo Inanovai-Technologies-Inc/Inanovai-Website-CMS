@@ -35,6 +35,25 @@
     },
     "href": {
       "type": "string"
+    },
+    "slug": {
+      "type": "string"
+    },
+    "detailedDescription": {
+      "type": "text"
+    },
+    "features": {
+      "type": "json"
+    },
+    "image": {
+      "type": "media",
+      "multiple": false,
+      "allowedTypes": [
+        "images",
+        "files",
+        "videos",
+        "audios"
+      ]
     }
   }
 }

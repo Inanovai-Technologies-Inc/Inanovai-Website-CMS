@@ -6,6 +6,7 @@ import remarkGfm from 'remark-gfm'
 import logoSrc from '../imports/image.png'
 import { EASE } from './motion/ease'
 import Button from './motion/Button'
+import Card from './motion/Card'
 
 const CHATBOT_ENDPOINT = `${STRAPI_URL}/api/chatbot`
 const HISTORY_STORAGE_KEY = 'inanovai-chatbot-history'
@@ -16,7 +17,20 @@ const QUICK_SUGGESTIONS = ['Tell me about ANJU', 'Our services', 'Careers']
 export type RoutePage = 'home' | 'careers' | 'blog-list' | 'blog-post' | 'about' | 'service-detail' | 'not-found'
 
 type ChatRole = 'user' | 'assistant'
-type ChatMessage = { role: ChatRole; content: string }
+
+type CareerJob = {
+  title: string
+  slug: string
+  location: string
+  employmentType: string
+  experience: string
+}
+
+type StructuredContent =
+  | { type: 'text'; content: string }
+  | { type: 'career-list'; message: string; jobs: CareerJob[] }
+
+type ChatMessage = { role: ChatRole; content: StructuredContent }
 
 type ChatbotProps = {
   routePage: RoutePage
@@ -64,7 +78,10 @@ function loadHistory(): ChatMessage[] {
     if (!raw) return []
     const parsed = JSON.parse(raw)
     if (!Array.isArray(parsed)) return []
-    return parsed.filter((m): m is ChatMessage => m && (m.role === 'user' || m.role === 'assistant') && typeof m.content === 'string')
+    return parsed.filter((m): m is ChatMessage => 
+      m && (m.role === 'user' || m.role === 'assistant') && 
+      m.content && typeof m.content === 'object' && 'type' in m.content
+    )
   } catch {
     return []
   }
@@ -121,7 +138,21 @@ function TypingDots() {
   )
 }
 
-function MarkdownMessage({ content }: { content: string }) {
+function MarkdownMessage({ content }: { content: StructuredContent }) {
+  if (content.type === 'career-list') {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+        <p style={{ margin: '0 0 0.5rem', color: 'var(--foreground)', fontSize: '0.8125rem', lineHeight: 1.5 }}>
+          {content.message}
+        </p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+          {content.jobs.map((job) => (
+            <CareerCard key={job.slug} job={job} />
+          ))}
+        </div>
+      </div>
+    )
+  }
   return (
     <ReactMarkdown
       remarkPlugins={[remarkGfm]}
@@ -145,8 +176,66 @@ function MarkdownMessage({ content }: { content: string }) {
         ),
       }}
     >
-      {content}
+      {content.content}
     </ReactMarkdown>
+  )
+}
+
+function CareerCard({ job }: { job: CareerJob }) {
+  const navigate = (path: string) => {
+    if (window.location.pathname !== path) {
+      window.history.pushState(null, '', path)
+    }
+    window.dispatchEvent(new PopStateEvent('popstate'))
+    window.scrollTo(0, 0)
+  }
+
+  return (
+    <Card
+      as="article"
+      onClick={() => navigate(`/careers/${encodeURIComponent(job.slug)}/apply`)}
+      style={{
+        padding: '1rem',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '0.5rem',
+        textAlign: 'left',
+        cursor: 'pointer',
+      }}
+    >
+      <div>
+        <h4 style={{
+          fontFamily: 'var(--font-display-family)',
+          fontSize: '0.875rem',
+          fontWeight: 800,
+          letterSpacing: '-0.02em',
+          color: 'var(--foreground)',
+          marginBottom: '0.25rem',
+          lineHeight: 1.25,
+        }}>
+          {job.title}
+        </h4>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', fontSize: '0.6875rem', color: 'var(--muted-foreground)', fontFamily: 'var(--font-mono-family)' }}>
+          {job.location && <span>{job.location}</span>}
+          {job.employmentType && <span>{job.employmentType}</span>}
+          {job.experience && <span>{job.experience}</span>}
+        </div>
+      </div>
+      <div style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: '0.375rem',
+        fontFamily: 'var(--font-mono-family)',
+        fontSize: '0.625rem',
+        letterSpacing: '0.08em',
+        textTransform: 'uppercase',
+        color: 'var(--accent)',
+        fontWeight: 700,
+        marginTop: '0.25rem',
+      }}>
+        View Job →
+      </div>
+    </Card>
   )
 }
 
@@ -210,8 +299,11 @@ export default function Chatbot({ routePage, blogSlug }: ChatbotProps) {
     const trimmed = input.trim().slice(0, MAX_MESSAGE_LENGTH)
     if (!trimmed || sending) return
 
-    const historyForRequest = messages.slice(-10)
-    const nextMessages = [...messages, { role: 'user', content: trimmed } as ChatMessage]
+    const historyForRequest = messages.slice(-10).map((m) => ({
+      role: m.role,
+      content: m.content.type === 'text' ? m.content.content : '',
+    }))
+    const nextMessages = [...messages, { role: 'user', content: { type: 'text', content: trimmed } } as ChatMessage]
     setMessages(nextMessages)
     saveHistory(nextMessages)
     setInput('')
@@ -227,8 +319,8 @@ export default function Chatbot({ routePage, blogSlug }: ChatbotProps) {
       if (!response.ok) throw new Error(`Request failed with status ${response.status}.`)
       if (requestContextVersion !== contextVersionRef.current) return
 
-      const payload: { reply?: string } = await response.json()
-      const reply = payload.reply?.trim() || "Sorry, I couldn't come up with a response. Could you try rephrasing that?"
+      const payload: { reply?: StructuredContent } = await response.json()
+      const reply = payload.reply ?? { type: 'text', content: "Sorry, I couldn't come up with a response. Could you try rephrasing that?" }
       const withReply = [...nextMessages, { role: 'assistant', content: reply } as ChatMessage]
       setMessages(withReply)
       saveHistory(withReply)
@@ -236,7 +328,7 @@ export default function Chatbot({ routePage, blogSlug }: ChatbotProps) {
       if (requestContextVersion !== contextVersionRef.current) return
       const withError = [
         ...nextMessages,
-        { role: 'assistant', content: "I'm having trouble responding right now. Please try again in a moment, or use the contact form." } as ChatMessage,
+        { role: 'assistant', content: { type: 'text', content: "I'm having trouble responding right now. Please try again in a moment, or use the contact form." } } as ChatMessage,
       ]
       setMessages(withError)
       saveHistory(withError)
@@ -392,7 +484,11 @@ export default function Chatbot({ routePage, blogSlug }: ChatbotProps) {
                       boxShadow: m.role === 'user' ? '0 3px 10px color-mix(in srgb, var(--accent) 16%, transparent)' : 'var(--shadow-sm)',
                     }}
                   >
-                    {m.role === 'assistant' ? <MarkdownMessage content={m.content} /> : m.content}
+                    {m.role === 'assistant' ? (
+                      <MarkdownMessage content={m.content} />
+                    ) : (
+                      m.content.type === 'text' ? m.content.content : ''
+                    )}
                   </div>
                 </motion.div>
               ))}

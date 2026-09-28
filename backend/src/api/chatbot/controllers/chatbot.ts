@@ -7,6 +7,20 @@ import type { Core } from '@strapi/strapi';
 type ChatRole = 'user' | 'assistant';
 type ChatMessage = { role: ChatRole; content: string };
 
+type StructuredResponse =
+  | { type: 'text'; content: string }
+  | {
+      type: 'career-list';
+      message: string;
+      jobs: Array<{
+        title: string;
+        slug: string;
+        location: string;
+        employmentType: string;
+        experience: string;
+      }>;
+    };
+
 type PageContext =
   | { page: 'home'; section?: string }
   | { page: 'careers' }
@@ -65,7 +79,7 @@ export default ({ strapi }: { strapi: Core.Strapi }) => ({
     } catch (err) {
       strapi.log.error('Chatbot request failed', err as Error);
       ctx.status = 502;
-      ctx.body = { reply: "I'm having trouble responding right now. Please try again in a moment, or use the contact form." };
+      ctx.body = { reply: { type: 'text', content: "I'm having trouble responding right now. Please try again in a moment, or use the contact form." } };
     }
   },
 });

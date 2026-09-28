@@ -11,6 +11,21 @@ import type { Core } from '@strapi/strapi';
 type ChatRole = 'user' | 'assistant';
 type ChatMessage = { role: ChatRole; content: string };
 
+// Structured response types
+type StructuredResponse =
+  | { type: 'text'; content: string }
+  | {
+      type: 'career-list';
+      message: string;
+      jobs: Array<{
+        title: string;
+        slug: string;
+        location: string;
+        employmentType: string;
+        experience: string;
+      }>;
+    };
+
 type PageContext =
   | { page: 'home'; section?: string }
   | { page: 'careers' }
@@ -66,6 +81,247 @@ async function fetchMany(uid: string, params: Record<string, unknown> = {}): Pro
   } catch {
     return [];
   }
+}
+
+async function fetchActiveCareers(): Promise<Array<{ title: string; slug: string; location: string; employmentType: string; experience: string }>> {
+  try {
+    const careers = await strapi.documents('api::career.career').findMany({
+      filters: { isActive: true },
+      pagination: { pageSize: 100 },
+      sort: ['createdAt:desc'],
+    } as any);
+    return (Array.isArray(careers) ? careers : []).map((c: any) => ({
+      title: c.title ?? 'Open Position',
+      slug: c.slug ?? '',
+      location: c.location ?? '',
+      employmentType: c.employmentType ?? '',
+      experience: c.experience ?? '',
+    }));
+  } catch {
+    return [];
+  }
+}
+
+function isCareerQuery(message: string): boolean {
+  const lower = message.toLowerCase();
+  const careerKeywords = [
+    'job opening',
+    'job openings',
+    'current job',
+    'current jobs',
+    'available job',
+    'available jobs',
+    'vacancies',
+    'vacancy',
+    'career',
+    'careers',
+    'position',
+    'positions',
+    'hiring',
+    'open role',
+    'open roles',
+    'employment',
+    'job',
+    'jobs',
+    'opening',
+    'openings',
+    'role',
+    'roles',
+    'work at',
+    'join',
+    'hiring',
+    'recruit',
+    'recruitment',
+    'fresher',
+    'freshers',
+    'entry level',
+    'junior',
+    'intern',
+    'internship',
+    'experience',
+    'years',
+    'yr',
+  ];
+  return careerKeywords.some((kw) => lower.includes(kw));
+}
+
+// Parse experience requirement from user message
+// Returns { minYears?: number, maxYears?: number, raw?: string }
+function parseExperienceFilter(message: string): { minYears?: number; maxYears?: number; raw?: string } {
+  const lower = message.toLowerCase();
+  
+  // Pattern: "below X years", "under X years", "less than X years", "< X years"
+  const belowMatch = lower.match(/(?:below|under|less than|<)\s*(\d+)\s*(?:years?|yrs?)/);
+  if (belowMatch) {
+    return { maxYears: parseInt(belowMatch[1], 10) - 1, raw: belowMatch[0] };
+  }
+  
+  // Pattern: "above X years", "over X years", "more than X years", "> X years"
+  const aboveMatch = lower.match(/(?:above|over|more than|>)\s*(\d+)\s*(?:years?|yrs?)/);
+  if (aboveMatch) {
+    return { minYears: parseInt(aboveMatch[1], 10) + 1, raw: aboveMatch[0] };
+  }
+  
+  // Pattern: "X+ years", "X plus years"
+  const plusMatch = lower.match(/(\d+)\s*\+\s*(?:years?|yrs?)/);
+  if (plusMatch) {
+    return { minYears: parseInt(plusMatch[1], 10), raw: plusMatch[0] };
+  }
+  
+  // Pattern: "X-Y years", "X to Y years", "X–Y years"
+  const rangeMatch = lower.match(/(\d+)\s*[–\-to]+\s*(\d+)\s*(?:years?|yrs?)/);
+  if (rangeMatch) {
+    return { minYears: parseInt(rangeMatch[1], 10), maxYears: parseInt(rangeMatch[2], 10), raw: rangeMatch[0] };
+  }
+  
+  // Pattern: "X years" (exact)
+  const exactMatch = lower.match(/\b(\d+)\s*(?:years?|yrs?)\b/);
+  if (exactMatch) {
+    const years = parseInt(exactMatch[1], 10);
+    return { minYears: years, maxYears: years, raw: exactMatch[0] };
+  }
+  
+  // Pattern: "fresher", "entry level", "junior" - implies 0-2 years
+  if (/\b(fresher|freshers|entry.?level|junior)\b/.test(lower)) {
+    return { minYears: 0, maxYears: 2, raw: 'fresher/entry level' };
+  }
+  
+  // Pattern: "senior" - implies 5+ years
+  if (/\bsenior\b/.test(lower)) {
+    return { minYears: 5, raw: 'senior' };
+  }
+  
+  return {};
+}
+
+// Parse experience string from Strapi (e.g., "0–2 years", "5+ years", "2–5 years")
+// Returns { minYears: number, maxYears: number }
+function parseExperienceString(expStr: string): { minYears: number; maxYears: number } {
+  if (!expStr) return { minYears: 0, maxYears: Infinity };
+  
+  const str = expStr.toLowerCase().replace(/[–—]/g, '-');
+  
+  // "X+ years"
+  const plusMatch = str.match(/(\d+)\s*\+\s*(?:years?|yrs?)/);
+  if (plusMatch) {
+    return { minYears: parseInt(plusMatch[1], 10), maxYears: Infinity };
+  }
+  
+  // "X-Y years"
+  const rangeMatch = str.match(/(\d+)\s*-\s*(\d+)\s*(?:years?|yrs?)/);
+  if (rangeMatch) {
+    return { minYears: parseInt(rangeMatch[1], 10), maxYears: parseInt(rangeMatch[2], 10) };
+  }
+  
+  // "X years"
+  const exactMatch = str.match(/(\d+)\s*(?:years?|yrs?)/);
+  if (exactMatch) {
+    const years = parseInt(exactMatch[1], 10);
+    return { minYears: years, maxYears: years };
+  }
+  
+  return { minYears: 0, maxYears: Infinity };
+}
+
+// Check if job experience matches the filter
+function matchesExperienceFilter(jobExperience: string, filter: { minYears?: number; maxYears?: number }): boolean {
+  const { minYears: filterMin, maxYears: filterMax } = filter;
+  if (filterMin === undefined && filterMax === undefined) return true;
+  
+  const { minYears: jobMin, maxYears: jobMax } = parseExperienceString(jobExperience);
+  
+  // Job overlaps with filter range
+  const jobMinEffective = jobMin;
+  const jobMaxEffective = jobMax === Infinity ? 100 : jobMax;
+  const filterMinEffective = filterMin ?? 0;
+  const filterMaxEffective = filterMax ?? 100;
+  
+  return jobMaxEffective >= filterMinEffective && jobMinEffective <= filterMaxEffective;
+}
+
+// Generate descriptive message for the filter
+function getFilterDescription(filter: { minYears?: number; maxYears?: number; raw?: string }): string {
+  const { minYears, maxYears, raw } = filter;
+  if (!raw) return '';
+  
+  if (minYears !== undefined && maxYears !== undefined) {
+    if (minYears === maxYears) return `for ${minYears} years of experience`;
+    return `for ${minYears}–${maxYears} years of experience`;
+  }
+  if (minYears !== undefined) return `requiring ${minYears}+ years of experience`;
+  if (maxYears !== undefined) return `with up to ${maxYears} years of experience`;
+  return '';
+}
+
+// Extract search keywords from user message (e.g., "Python", "AI", "Cloud")
+// Returns array of keywords to match against job titles
+function extractJobKeywords(message: string): string[] {
+  const lower = message.toLowerCase();
+  const stopWords = new Set([
+    'are', 'there', 'any', 'the', 'a', 'an', 'for', 'with', 'that', 'this',
+    'show', 'me', 'jobs', 'job', 'opening', 'openings', 'position', 'positions',
+    'career', 'careers', 'role', 'roles', 'work', 'hiring', 'available',
+    'current', 'do', 'you', 'have', 'has', 'is', 'in', 'at', 'on', 'of', 'to',
+    'and', 'or', 'but', 'if', 'then', 'else', 'when', 'where', 'what', 'how',
+    'many', 'much', 'some', 'all', 'each', 'every', 'any', 'one', 'two',
+    'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten',
+    'years', 'year', 'yrs', 'yr', 'experience', 'exp', 'level', 'senior',
+    'junior', 'fresher', 'entry', 'plus', 'above', 'below', 'under', 'over',
+    'more', 'less', 'than', 'require', 'requiring', 'need', 'needing',
+  ]);
+  
+  // Common tech/role keywords that should be matched
+  const knownKeywords = [
+    'python', 'javascript', 'typescript', 'java', 'go', 'golang', 'rust',
+    'react', 'vue', 'angular', 'node', 'express', 'django', 'flask', 'fastapi',
+    'aws', 'azure', 'gcp', 'cloud', 'devops', 'kubernetes', 'docker',
+    'ai', 'ml', 'machine learning', 'deep learning', 'data science', 'data scientist',
+    'backend', 'frontend', 'fullstack', 'full-stack', 'mobile', 'ios', 'android',
+    'flutter', 'react native', 'swift', 'kotlin',
+    'database', 'sql', 'postgres', 'mongodb', 'redis', 'elasticsearch',
+    'microservices', 'api', 'rest', 'graphql', 'grpc',
+    'testing', 'qa', 'automation', 'ci/cd', 'pipeline',
+    'security', 'cybersecurity', 'penetration', 'compliance',
+    'erp', 'erpnext', 'frappe', 'odoo', 'sap',
+    'integration', 'middleware', 'etl', 'pipeline',
+    'support', 'helpdesk', 'technical support', 'customer success',
+    'sales', 'marketing', 'product', 'project manager', 'scrum', 'agile',
+  ];
+  
+  const found: string[] = [];
+  
+  // Check for known tech keywords
+  for (const kw of knownKeywords) {
+    if (lower.includes(kw)) {
+      found.push(kw);
+    }
+  }
+  
+  // Also extract capitalized words that might be specific technologies
+  const capitalizedWords = message.match(/\b[A-Z][a-zA-Z]+(?:\s+[A-Z][a-zA-Z]+)*\b/g) || [];
+  for (const word of capitalizedWords) {
+    const lw = word.toLowerCase();
+    if (!stopWords.has(lw) && lw.length > 2 && !found.includes(lw)) {
+      found.push(lw);
+    }
+  }
+  
+  // Remove duplicates while preserving order
+  return [...new Set(found)];
+}
+
+// Check if job matches keyword filter
+function matchesKeywordFilter(jobTitle: string, keywords: string[]): boolean {
+  if (keywords.length === 0) return true;
+  const titleLower = jobTitle.toLowerCase();
+  return keywords.some((kw) => titleLower.includes(kw.toLowerCase()));
+}
+
+// Generate descriptive message for keyword filter
+function getKeywordFilterDescription(keywords: string[]): string {
+  if (keywords.length === 0) return '';
+  if (keywords.length === 1) return `for "${keywords[0]}"`;
+  return `for "${keywords.slice(0, -1).join('", "')} and ${keywords[keywords.length - 1]}"`;
 }
 
 async function buildContactContext(): Promise<string> {
@@ -320,15 +576,61 @@ async function callGemini(systemPrompt: string, history: ChatMessage[], message:
 }
 
 export default ({ strapi }: { strapi: Core.Strapi }) => ({
-  async reply(message: string, pageContext: PageContext, history: ChatMessage[]): Promise<string> {
+  async reply(message: string, pageContext: PageContext, history: ChatMessage[]): Promise<StructuredResponse> {
+    // Check for career-related queries and return structured response
+    if (isCareerQuery(message)) {
+      const jobs = await fetchActiveCareers();
+      if (jobs.length > 0) {
+        // Parse experience filter from user message
+        const expFilter = parseExperienceFilter(message);
+        let filteredJobs = expFilter.minYears !== undefined || expFilter.maxYears !== undefined
+          ? jobs.filter((job) => matchesExperienceFilter(job.experience, expFilter))
+          : jobs;
+        
+        // Apply keyword/title filter
+        const keywords = extractJobKeywords(message);
+        if (keywords.length > 0) {
+          filteredJobs = filteredJobs.filter((job) => matchesKeywordFilter(job.title, keywords));
+        }
+        
+        const expDesc = getFilterDescription(expFilter);
+        const kwDesc = getKeywordFilterDescription(keywords);
+        const count = filteredJobs.length;
+        
+        // Combine descriptions
+        const descriptions = [expDesc, kwDesc].filter(Boolean);
+        const combinedDesc = descriptions.join(' and ');
+        
+        let messageText = "Here are the current job openings:";
+        if (combinedDesc && count > 0) {
+          messageText = `There ${count === 1 ? 'is' : 'are'} ${count} current job opening${count === 1 ? '' : 's'} ${combinedDesc}:`;
+        } else if (combinedDesc && count === 0) {
+          messageText = `No job openings found ${combinedDesc}.`;
+        }
+        
+        return {
+          type: 'career-list',
+          message: messageText,
+          jobs: filteredJobs.map((job) => ({
+            title: job.title,
+            slug: job.slug,
+            location: job.location,
+            employmentType: job.employmentType,
+            experience: job.experience,
+          })),
+        };
+      }
+      // No active jobs found - fall through to normal response
+    }
+
     const { text: contextText, pageNote, blogPostFound } = await buildContext(pageContext);
 
     if (pageContext.page === 'blog-post' && !blogPostFound) {
-      return "I can't find that article anymore — it may have been moved or removed. Try the Blog page for current articles, or use the contact form for anything else.";
+      return { type: 'text', content: "I can't find that article anymore — it may have been moved or removed. Try the Blog page for current articles, or use the contact form for anything else." };
     }
 
     const systemPrompt = buildSystemPrompt(pageNote, contextText);
     const reply = await callGemini(systemPrompt, history, message);
-    return reply || "Sorry, I couldn't come up with a response. Could you try rephrasing that?";
+    return { type: 'text', content: reply || "Sorry, I couldn't come up with a response. Could you try rephrasing that?" };
   },
 });

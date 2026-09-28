@@ -3,7 +3,7 @@ import { STRAPI_URL } from '../config'
 import Reveal from './motion/Reveal'
 import Card from './motion/Card'
 
-const ABOUT_ENDPOINT = `${STRAPI_URL}/api/about`
+const ABOUT_ENDPOINTS = [`${STRAPI_URL}/api/about`, `${STRAPI_URL}/api/abouts`]
 const TEAM_MEMBERS_ENDPOINT = `${STRAPI_URL}/api/team-members`
 const STRAPI_BASE_URL = STRAPI_URL
 
@@ -177,17 +177,6 @@ type AboutFields = {
   heroDescription?: string
   whoWeAreTitle?: string
   whoWeAreDescription?: RichText
-  whatWeDoTitle?: string
-  whatWeDoDescription?: string
-  approachTitle?: string
-  approachDescription?: string
-  whyInanovaiTitle?: string
-  whyInanovaiDescription?: string
-  teamTitle?: string
-  teamDescription?: string
-  ctaTitle?: string
-  ctaDescription?: string
-  ctaButtonText?: string
 }
 
 type AboutEntry = AboutFields & {
@@ -350,6 +339,7 @@ function LinkedInIcon() {
 // CMS entry actually has one — no empty LinkedIn affordance otherwise.
 function TeamMemberCard({ member }: { member: TeamMember }) {
   const hasLink = Boolean(member.linkedinUrl)
+  const [photoUnavailable, setPhotoUnavailable] = useState(false)
 
   return (
     <Card
@@ -372,8 +362,13 @@ function TeamMemberCard({ member }: { member: TeamMember }) {
           alignItems: 'center',
           justifyContent: 'center',
         }}>
-          {member.photoUrl ? (
-            <img src={member.photoUrl} alt={member.name} className="w-full h-full object-cover" />
+          {member.photoUrl && !photoUnavailable ? (
+            <img
+              src={member.photoUrl}
+              alt={member.name}
+              className="w-full h-full object-cover"
+              onError={() => setPhotoUnavailable(true)}
+            />
           ) : (
             <span style={{ fontFamily: 'var(--font-display-family)', fontSize: '1.25rem', fontWeight: 800, color: 'var(--accent)' }}>
               {initials(member.name)}
@@ -443,9 +438,16 @@ export default function AboutPage() {
 
     async function loadAbout() {
       try {
-        const query = new URLSearchParams({ populate: '*' })
-        const response = await fetch(`${ABOUT_ENDPOINT}?${query}`, { signal: controller.signal })
-        if (!response.ok) throw new Error(`Request failed with status ${response.status}.`)
+        const query = new URLSearchParams()
+        ;['heroEyebrow', 'heroTitle', 'heroDescription', 'whoWeAreTitle', 'whoWeAreDescription'].forEach((field, index) => {
+          query.set(`fields[${index}]`, field)
+        })
+        let response: Response | null = null
+        for (const endpoint of ABOUT_ENDPOINTS) {
+          response = await fetch(`${endpoint}?${query}`, { signal: controller.signal })
+          if (response.status !== 404) break
+        }
+        if (!response?.ok) throw new Error(`Request failed with status ${response?.status ?? 'unknown'}.`)
 
         const payload: StrapiAboutResponse = await response.json()
         const entry = pickEntry(payload.data)
@@ -474,7 +476,7 @@ export default function AboutPage() {
 
     async function loadTeamMembers() {
       try {
-        const query = new URLSearchParams({ populate: '*', 'pagination[pageSize]': String(PAGE_SIZE) })
+        const query = new URLSearchParams({ 'populate[photo]': 'true', 'pagination[pageSize]': String(PAGE_SIZE) })
         const response = await fetch(`${TEAM_MEMBERS_ENDPOINT}?${query}`, { signal: controller.signal })
         if (!response.ok) throw new Error(`Request failed with status ${response.status}.`)
 
@@ -553,18 +555,11 @@ export default function AboutPage() {
           {/* OUR TEAM */}
           <section style={{ backgroundColor: 'var(--background)', borderTop: '1px solid var(--border)' }}>
             <div className="max-w-6xl mx-auto px-6 py-20">
-              {about.teamTitle && (
-                <Reveal className="mb-10">
-                  <h2 style={{ ...sectionHeadingStyle, fontSize: 'clamp(1.5rem, 3vw, 2rem)', marginBottom: about.teamDescription ? '0.75rem' : 0 }}>
-                    {about.teamTitle}
-                  </h2>
-                  {about.teamDescription && (
-                    <p style={{ fontSize: '0.9375rem', lineHeight: 1.7, color: 'var(--muted-foreground)', maxWidth: '38rem' }}>
-                      {about.teamDescription}
-                    </p>
-                  )}
-                </Reveal>
-              )}
+              <Reveal className="mb-10">
+                <h2 style={{ ...sectionHeadingStyle, fontSize: 'clamp(1.5rem, 3vw, 2rem)' }}>
+                  Our Team
+                </h2>
+              </Reveal>
 
               {teamLoading && <div style={statusStyle}>Loading team…</div>}
 

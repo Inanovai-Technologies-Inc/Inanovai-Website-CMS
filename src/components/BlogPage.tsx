@@ -158,6 +158,8 @@ export default function BlogPage({ navigate }: BlogPageProps) {
   const [blogs, setBlogs] = useState<Blog[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [activeCategory, setActiveCategory] = useState<string>('ALL')
 
   useEffect(() => {
     const controller = new AbortController()
@@ -195,6 +197,18 @@ export default function BlogPage({ navigate }: BlogPageProps) {
     navigate(`/blog/${slug}`)
   }
 
+  // Extract unique categories from blogs
+  const categories = Array.from(new Set(blogs.map((b) => b.category).filter(Boolean))).sort()
+
+  // Apply search and category filters
+  const filteredBlogs = blogs.filter((blog) => {
+    const matchesSearch = searchQuery === '' ||
+      blog.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      blog.excerpt.toLowerCase().includes(searchQuery.toLowerCase())
+    const matchesCategory = activeCategory === 'ALL' || blog.category === activeCategory
+    return matchesSearch && matchesCategory
+  })
+
   return (
     <section id="blog" style={{ backgroundColor: 'var(--background)', borderTop: '1px solid var(--border)' }}>
       <div className="max-w-6xl mx-auto px-6 py-24">
@@ -226,6 +240,123 @@ export default function BlogPage({ navigate }: BlogPageProps) {
           </h1>
         </Reveal>
 
+        {/* Search & Category Filters */}
+        {!loading && !error && blogs.length > 0 && (
+          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6 mb-12">
+            {/* Search Input */}
+            <div style={{ flex: 1, maxWidth: '32rem' }}>
+              <label htmlFor="blog-search" style={{ display: 'block', marginBottom: '0.5rem' }}>
+                <input
+                  id="blog-search"
+                  type="search"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search articles..."
+                  style={{
+                    width: '100%',
+                    fontFamily: 'var(--font-body-family)',
+                    fontSize: '0.875rem',
+                    padding: '0.625rem 0.875rem',
+                    borderRadius: 'var(--radius)',
+                    border: '1px solid var(--border)',
+                    backgroundColor: 'var(--background)',
+                    color: 'var(--foreground)',
+                    outline: 'none',
+                    transition: 'border-color 0.15s ease, box-shadow 0.15s ease',
+                  }}
+                  onFocus={(e) => {
+                    e.currentTarget.style.borderColor = 'var(--accent)'
+                    e.currentTarget.style.boxShadow = '0 0 0 3px color-mix(in srgb, var(--accent) 16%, transparent)'
+                  }}
+                  onBlur={(e) => {
+                    e.currentTarget.style.borderColor = 'var(--border)'
+                    e.currentTarget.style.boxShadow = 'none'
+                  }}
+                />
+              </label>
+            </div>
+
+            {/* Category Filters */}
+            <div
+              className="flex flex-wrap gap-2"
+              role="group"
+              aria-label="Filter articles by category"
+            >
+              <button
+                type="button"
+                onClick={() => setActiveCategory('ALL')}
+                aria-pressed={activeCategory === 'ALL'}
+                style={{
+                  fontFamily: 'var(--font-mono-family)',
+                  fontSize: '0.5625rem',
+                  letterSpacing: '0.14em',
+                  textTransform: 'uppercase',
+                  fontWeight: 600,
+                  color: activeCategory === 'ALL' ? 'var(--card)' : 'var(--muted-foreground)',
+                  backgroundColor: activeCategory === 'ALL' ? 'var(--foreground)' : 'transparent',
+                  border: activeCategory === 'ALL' ? '1px solid transparent' : '1px solid var(--border)',
+                  padding: '0.375rem 0.875rem',
+                  borderRadius: 'var(--radius)',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease',
+                  whiteSpace: 'nowrap',
+                }}
+                onMouseEnter={(e) => {
+                  if (activeCategory !== 'ALL') {
+                    e.currentTarget.style.color = 'var(--foreground)'
+                    e.currentTarget.style.borderColor = 'var(--accent)'
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (activeCategory !== 'ALL') {
+                    e.currentTarget.style.color = 'var(--muted-foreground)'
+                    e.currentTarget.style.borderColor = 'var(--border)'
+                  }
+                }}
+              >
+                ALL
+              </button>
+              {categories.map((cat) => (
+                <button
+                  key={cat}
+                  type="button"
+                  onClick={() => setActiveCategory(cat)}
+                  aria-pressed={activeCategory === cat}
+                  style={{
+                    fontFamily: 'var(--font-mono-family)',
+                    fontSize: '0.5625rem',
+                    letterSpacing: '0.14em',
+                    textTransform: 'uppercase',
+                    fontWeight: 600,
+                    color: activeCategory === cat ? 'var(--card)' : 'var(--muted-foreground)',
+                    backgroundColor: activeCategory === cat ? 'var(--accent)' : 'transparent',
+                    border: activeCategory === cat ? '1px solid transparent' : '1px solid var(--border)',
+                    padding: '0.375rem 0.875rem',
+                    borderRadius: 'var(--radius)',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease',
+                    whiteSpace: 'nowrap',
+                  }}
+                  onMouseEnter={(e) => {
+                    if (activeCategory !== cat) {
+                      e.currentTarget.style.color = 'var(--foreground)'
+                      e.currentTarget.style.borderColor = 'var(--accent)'
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (activeCategory !== cat) {
+                      e.currentTarget.style.color = 'var(--muted-foreground)'
+                      e.currentTarget.style.borderColor = 'var(--border)'
+                    }
+                  }}
+                >
+                  {cat}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
         {loading && <div style={statusStyle}>Loading articles…</div>}
 
         {!loading && error && (
@@ -242,19 +373,23 @@ export default function BlogPage({ navigate }: BlogPageProps) {
           <div style={statusStyle}>No articles published yet.</div>
         )}
 
-        {!loading && !error && blogs.length === 1 && (
+        {!loading && !error && filteredBlogs.length === 0 && blogs.length > 0 && (
+          <div style={statusStyle}>No articles found.</div>
+        )}
+
+        {!loading && !error && filteredBlogs.length === 1 && (
           <div className="flex justify-center">
             <div style={{ width: '100%', maxWidth: '22rem' }}>
               <Reveal>
-                <BlogTile blog={blogs[0]} onNavigate={goToPost} />
+                <BlogTile blog={filteredBlogs[0]} onNavigate={goToPost} />
               </Reveal>
             </div>
           </div>
         )}
 
-        {!loading && !error && blogs.length === 2 && (
+        {!loading && !error && filteredBlogs.length === 2 && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl mx-auto">
-            {blogs.map((blog, i) => (
+            {filteredBlogs.map((blog, i) => (
               <Reveal key={blog.key} delay={staggerDelay(i)}>
                 <BlogTile blog={blog} onNavigate={goToPost} />
               </Reveal>
@@ -262,9 +397,9 @@ export default function BlogPage({ navigate }: BlogPageProps) {
           </div>
         )}
 
-        {!loading && !error && blogs.length > 2 && (
+        {!loading && !error && filteredBlogs.length > 2 && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {blogs.map((blog, i) => (
+            {filteredBlogs.map((blog, i) => (
               <Reveal key={blog.key} delay={staggerDelay(i)}>
                 <BlogTile blog={blog} onNavigate={goToPost} />
               </Reveal>

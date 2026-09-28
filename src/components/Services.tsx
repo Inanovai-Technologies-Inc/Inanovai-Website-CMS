@@ -122,10 +122,22 @@ type ServicesProps = {
   navigate: (to: string) => void
 }
 
+type CategoryFilter = 'ALL' | 'AI' | 'ERP'
+
+const CATEGORY_FILTERS: CategoryFilter[] = ['ALL', 'AI', 'ERP']
+
 export default function Services({ navigate }: ServicesProps) {
   const [section, setSection] = useState<ServiceSectionFields | null>(null)
   const [sectionLoading, setSectionLoading] = useState(true)
   const [sectionError, setSectionError] = useState<string | null>(null)
+  const [activeFilter, setActiveFilter] = useState<CategoryFilter>('ALL')
+  const [services, setServices] = useState<Service[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  const filteredServices = activeFilter === 'ALL'
+    ? services
+    : services.filter((s) => s.category === activeFilter)
 
   useEffect(() => {
     const controller = new AbortController()
@@ -152,10 +164,6 @@ export default function Services({ navigate }: ServicesProps) {
     loadSection()
     return () => controller.abort()
   }, [])
-
-  const [services, setServices] = useState<Service[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     const controller = new AbortController()
@@ -226,6 +234,57 @@ export default function Services({ navigate }: ServicesProps) {
           </p>
         </Reveal>
 
+        {/* Category Filter */}
+        {!loading && !error && services.length > 0 && (
+          <div
+            className="flex flex-wrap gap-2 mb-12"
+            role="group"
+            aria-label="Filter services by category"
+          >
+            {CATEGORY_FILTERS.map((cat) => (
+              <button
+                key={cat}
+                type="button"
+                onClick={() => setActiveFilter(cat)}
+                aria-pressed={activeFilter === cat}
+                style={{
+                  fontFamily: 'var(--font-mono-family)',
+                  fontSize: '0.5625rem',
+                  letterSpacing: '0.14em',
+                  textTransform: 'uppercase',
+                  fontWeight: 600,
+                  color: activeFilter === cat ? 'var(--card)' : 'var(--muted-foreground)',
+                  backgroundColor: activeFilter === cat
+                    ? (cat === 'AI' ? 'var(--accent)' : cat === 'ERP' ? 'var(--accent-warm)' : 'var(--foreground)')
+                    : 'transparent',
+                  border: activeFilter === cat
+                    ? '1px solid transparent'
+                    : '1px solid var(--border)',
+                  padding: '0.375rem 0.875rem',
+                  borderRadius: 'var(--radius)',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease',
+                  whiteSpace: 'nowrap',
+                }}
+                onMouseEnter={(e) => {
+                  if (activeFilter !== cat) {
+                    e.currentTarget.style.color = 'var(--foreground)'
+                    e.currentTarget.style.borderColor = 'var(--accent)'
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (activeFilter !== cat) {
+                    e.currentTarget.style.color = 'var(--muted-foreground)'
+                    e.currentTarget.style.borderColor = 'var(--border)'
+                  }
+                }}
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
+        )}
+
         {loading && <div style={statusStyle}>Loading services…</div>}
 
         {!loading && error && (
@@ -242,9 +301,15 @@ export default function Services({ navigate }: ServicesProps) {
           <div style={statusStyle}>No services published yet.</div>
         )}
 
-        {!loading && !error && services.length > 0 && (
+        {!loading && !error && filteredServices.length === 0 && services.length > 0 && (
+          <div style={statusStyle}>
+            No services found for category "{activeFilter}".
+          </div>
+        )}
+
+        {!loading && !error && filteredServices.length > 0 && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {services.map((service, i) => (
+            {filteredServices.map((service, i) => (
               <Reveal key={service.key} delay={staggerDelay(i)}>
                 <Card className="group" style={{ padding: '2rem', display: 'flex', flexDirection: 'column', height: '100%' }}>
                   {/* Category + index row */}

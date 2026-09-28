@@ -888,6 +888,33 @@ export interface ApiDemoDemo extends Struct.CollectionTypeSchema {
   };
 }
 
+export interface ApiFaqFaq extends Struct.CollectionTypeSchema {
+  collectionName: 'faqs';
+  info: {
+    displayName: 'FAQ';
+    pluralName: 'faqs';
+    singularName: 'faq';
+  };
+  options: {
+    draftAndPublish: true;
+  };
+  attributes: {
+    answer: Schema.Attribute.Text;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    displayOrder: Schema.Attribute.Integer;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<'oneToMany', 'api::faq.faq'> &
+      Schema.Attribute.Private;
+    publishedAt: Schema.Attribute.DateTime;
+    question: Schema.Attribute.String;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+  };
+}
+
 export interface ApiHomeChatHomeChat extends Struct.CollectionTypeSchema {
   collectionName: 'home_chats';
   info: {
@@ -1648,6 +1675,7 @@ declare module '@strapi/strapi' {
       'api::contact.contact': ApiContactContact;
       'api::demo-section.demo-section': ApiDemoSectionDemoSection;
       'api::demo.demo': ApiDemoDemo;
+      'api::faq.faq': ApiFaqFaq;
       'api::home-chat.home-chat': ApiHomeChatHomeChat;
       'api::home.home': ApiHomeHome;
       'api::service-section.service-section': ApiServiceSectionServiceSection;

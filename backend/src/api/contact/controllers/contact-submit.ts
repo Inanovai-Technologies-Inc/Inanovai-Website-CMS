@@ -19,7 +19,15 @@ export default ({ strapi }: { strapi: Core.Strapi }) => ({
 
     if (!result.ok) {
       ctx.status = result.status;
-      ctx.body = { error: result.error };
+      ctx.body = result.saved
+        ? {
+            success: false,
+            saved: true,
+            notificationFailed: true,
+            submissionId: result.submissionId,
+            error: result.error,
+          }
+        : { error: result.error };
       return;
     }
 

@@ -12,7 +12,13 @@ export type FrappeLeadResult = {
   error?: string;
 };
 
-const DEFAULT_SOURCE = 'Reference';
+// Frappe's `source` is a Link to the Lead Source doctype, so the value has to
+// already exist as a record on the target instance or the insert is rejected
+// outright (417 LinkValidationError). The previous default, "Reference",
+// existed on the old LAN instance but not on demo.inanovai.com, which blocked
+// every Lead. Overridable so the next instance with a different Lead Source
+// list is a variable change rather than a deploy.
+const DEFAULT_SOURCE = process.env.FRAPPE_LEAD_SOURCE?.trim() || 'Website Contact Page';
 const DEFAULT_TIMEOUT_MS = 5000;
 const MAX_DIAGNOSTIC_LENGTH = 2000;
 const SENSITIVE_FIELD_PATTERN = /authorization|api[_-]?key|api[_-]?secret|password|token|cookie|set-cookie/i;

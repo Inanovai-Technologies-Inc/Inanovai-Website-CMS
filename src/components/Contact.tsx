@@ -123,7 +123,15 @@ export default function Contact() {
         body: JSON.stringify(form),
       })
 
-      const payload: { success?: boolean; error?: string } = await response.json().catch(() => ({}))
+      const payload: { success?: boolean; saved?: boolean; notificationFailed?: boolean; error?: string } =
+        await response.json().catch(() => ({}))
+
+      // A 502 with saved:true means the enquiry is stored and only the team's
+      // notification failed. Reporting that as "could not send" would be wrong
+      // and invites the visitor to submit again, so say what actually happened.
+      if (response.status === 502 && payload.saved) {
+        throw new Error('Your message was received, but our confirmation could not be sent. We have it and will get back to you.')
+      }
 
       if (!response.ok || !payload.success) {
         throw new Error(payload.error || `Request failed with status ${response.status}.`)

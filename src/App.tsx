@@ -3,6 +3,7 @@ import Hero from './components/Hero'
 import Anju from './components/Anju'
 import Services from './components/Services'
 import WhyUs from './components/WhyUs'
+import Governance from './components/Governance'
 import FAQ from './components/FAQ'
 import DemoSection from './components/DemoSection'
 import CareersPage from './components/CareersPage'
@@ -76,6 +77,7 @@ export default function App() {
                 <Anju />
                 <Services navigate={navigate} />
                 <WhyUs />
+                <Governance />
                 <FAQ />
                 <DemoSection />
                 <Contact />

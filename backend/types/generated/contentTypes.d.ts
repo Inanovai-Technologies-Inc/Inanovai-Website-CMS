@@ -954,6 +954,68 @@ export interface ApiFaqFaq extends Struct.CollectionTypeSchema {
   };
 }
 
+export interface ApiGovernanceSectionGovernanceSection
+  extends Struct.SingleTypeSchema {
+  collectionName: 'governance_sections';
+  info: {
+    displayName: 'Governance Section';
+    pluralName: 'governance-sections';
+    singularName: 'governance-section';
+  };
+  options: {
+    draftAndPublish: true;
+  };
+  attributes: {
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    description: Schema.Attribute.Text;
+    eyebrow: Schema.Attribute.String;
+    heading: Schema.Attribute.String;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::governance-section.governance-section'
+    > &
+      Schema.Attribute.Private;
+    publishedAt: Schema.Attribute.DateTime;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+  };
+}
+
+export interface ApiGovernanceTopicGovernanceTopic
+  extends Struct.CollectionTypeSchema {
+  collectionName: 'governance_topics';
+  info: {
+    displayName: 'Governance Topic';
+    pluralName: 'governance-topics';
+    singularName: 'governance-topic';
+  };
+  options: {
+    draftAndPublish: true;
+  };
+  attributes: {
+    body: Schema.Attribute.Text;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    displayOrder: Schema.Attribute.Integer;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::governance-topic.governance-topic'
+    > &
+      Schema.Attribute.Private;
+    publishedAt: Schema.Attribute.DateTime;
+    title: Schema.Attribute.String;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+  };
+}
+
 export interface ApiHomeChatHomeChat extends Struct.CollectionTypeSchema {
   collectionName: 'home_chats';
   info: {
@@ -1716,6 +1778,8 @@ declare module '@strapi/strapi' {
       'api::demo-section.demo-section': ApiDemoSectionDemoSection;
       'api::demo.demo': ApiDemoDemo;
       'api::faq.faq': ApiFaqFaq;
+      'api::governance-section.governance-section': ApiGovernanceSectionGovernanceSection;
+      'api::governance-topic.governance-topic': ApiGovernanceTopicGovernanceTopic;
       'api::home-chat.home-chat': ApiHomeChatHomeChat;
       'api::home.home': ApiHomeHome;
       'api::service-section.service-section': ApiServiceSectionServiceSection;
